@@ -22,7 +22,9 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public final class KitGuiService {
     public enum Screen { PLAYER_LIST, PLAYER_DETAIL, ADMIN_LIST, EDITOR, DELETE_CONFIRM }
@@ -31,20 +33,28 @@ public final class KitGuiService {
         private final Screen screen;
         private final String kitId;
         private final int page;
+        private final Map<Integer, String> kitSlots;
 
         public Holder(Screen screen, String kitId, int page) {
+            this(screen, kitId, page, Map.of());
+        }
+
+        public Holder(Screen screen, String kitId, int page, Map<Integer, String> kitSlots) {
             this.screen = screen;
             this.kitId = kitId;
             this.page = page;
+            this.kitSlots = Map.copyOf(kitSlots);
         }
 
         public Screen screen() { return screen; }
         public String kitId() { return kitId; }
         public int page() { return page; }
+        public String kitAt(int slot) { return kitSlots.get(slot); }
         @Override public Inventory getInventory() { return null; }
     }
 
     private static final int PAGE_SIZE = 45;
+    private static final int PLAYER_KITS_PER_PAGE = 28;
     private static final int PLAYER_CLAIM_SLOT = 22;
 
     private final MiraKitsPlugin plugin;
@@ -72,24 +82,34 @@ public final class KitGuiService {
         List<String> visible = kits.kitIds().stream()
                 .filter(id -> {
                     KitMeta meta = kits.meta(id);
-                    return meta.visible() && meta.enabled();
+                    return meta.visible() && meta.enabled() && kits.hasKitPermission(player, id);
                 })
                 .toList();
-        int maxPage = Math.max(0, (visible.size() - 1) / PAGE_SIZE);
+
+        int maxPage = Math.max(0, (visible.size() - 1) / PLAYER_KITS_PER_PAGE);
         int safePage = Math.max(0, Math.min(page, maxPage));
+        int start = safePage * PLAYER_KITS_PER_PAGE;
+        List<String> pageKits = visible.subList(start, Math.min(start + PLAYER_KITS_PER_PAGE, visible.size()));
+
+        int contentRows = Math.max(1, (pageKits.size() + 6) / 7);
+        int rows = Math.max(3, Math.min(6, contentRows + 2));
+        int size = rows * 9;
+        Map<Integer, String> kitSlots = buildPlayerKitSlots(pageKits, rows);
+
         Inventory inventory = Bukkit.createInventory(
-                new Holder(Screen.PLAYER_LIST, null, safePage),
-                54,
+                new Holder(Screen.PLAYER_LIST, null, safePage, kitSlots),
+                size,
                 Component.text(plugin.getConfig().getString("player-gui-title", "Kits"), NamedTextColor.DARK_PURPLE)
         );
 
-        int start = safePage * PAGE_SIZE;
-        for (int i = 0; i < PAGE_SIZE && start + i < visible.size(); i++) {
-            inventory.setItem(i, kitPlaceholder(visible.get(start + i)));
-        }
-        if (safePage > 0) inventory.setItem(45, control(Material.ARROW, "Previous Page", NamedTextColor.YELLOW));
-        inventory.setItem(49, control(Material.BARRIER, "Close", NamedTextColor.RED));
-        if (safePage < maxPage) inventory.setItem(53, control(Material.ARROW, "Next Page", NamedTextColor.YELLOW));
+        ItemStack filler = glowingGlass();
+        for (int slot = 0; slot < size; slot++) inventory.setItem(slot, filler.clone());
+        kitSlots.forEach((slot, id) -> inventory.setItem(slot, kitPlaceholder(id)));
+
+        int bottomStart = size - 9;
+        if (safePage > 0) inventory.setItem(bottomStart + 1, control(Material.ARROW, "Previous Page", NamedTextColor.YELLOW));
+        inventory.setItem(bottomStart + 4, control(Material.BARRIER, "Close", NamedTextColor.RED));
+        if (safePage < maxPage) inventory.setItem(bottomStart + 7, control(Material.ARROW, "Next Page", NamedTextColor.YELLOW));
         player.openInventory(inventory);
     }
 
@@ -99,9 +119,6 @@ public final class KitGuiService {
         KitMeta meta = kits.meta(id);
         if ((!meta.visible() || !meta.enabled()) && !player.hasPermission("mirakits.admin")) return false;
 
-        // The player-facing kit screen deliberately exposes no price, cooldown or admin
-        // controls. Those settings remain enforced by claim() and are editable only in the
-        // mirakits.admin editor. Players see one central action: Claim Kit.
         Inventory inventory = Bukkit.createInventory(
                 new Holder(Screen.PLAYER_DETAIL, id, 0),
                 45,
@@ -226,10 +243,49 @@ public final class KitGuiService {
         ItemMeta meta = chest.getItemMeta();
         meta.displayName(Component.text(metaData.displayName(), NamedTextColor.GOLD)
                 .decoration(TextDecoration.ITALIC, false));
-        meta.setEnchantmentGlintOverride(true);
+        meta.setEnchantmentGlintOverride(false);
         meta.lore(buildKitLore(id));
         chest.setItemMeta(meta);
         return chest;
+    }
+
+    private Map<Integer, String> buildPlayerKitSlots(List<String> pageKits, int rows) {
+        Map<Integer, String> slots = new LinkedHashMap<>();
+        if (pageKits.isEmpty()) return slots;
+        int contentRows = rows - 2;
+        int base = pageKits.size() / contentRows;
+        int remainder = pageKits.size() % contentRows;
+        int index = 0;
+        for (int row = 0; row < contentRows; row++) {
+            int count = base + (row < remainder ? 1 : 0);
+            if (count <= 0) continue;
+            for (int column : centeredColumns(count)) {
+                if (index >= pageKits.size()) break;
+                slots.put((row + 1) * 9 + column, pageKits.get(index++));
+            }
+        }
+        return slots;
+    }
+
+    private List<Integer> centeredColumns(int count) {
+        return switch (count) {
+            case 1 -> List.of(4);
+            case 2 -> List.of(3, 5);
+            case 3 -> List.of(2, 4, 6);
+            case 4 -> List.of(1, 3, 5, 7);
+            case 5 -> List.of(1, 2, 4, 6, 7);
+            case 6 -> List.of(1, 2, 3, 5, 6, 7);
+            default -> List.of(1, 2, 3, 4, 5, 6, 7);
+        };
+    }
+
+    private ItemStack glowingGlass() {
+        ItemStack glass = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+        ItemMeta meta = glass.getItemMeta();
+        meta.displayName(Component.empty());
+        meta.setEnchantmentGlintOverride(true);
+        glass.setItemMeta(meta);
+        return glass;
     }
 
     private List<Component> buildKitLore(String id) {
