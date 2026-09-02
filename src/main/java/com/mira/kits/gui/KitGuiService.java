@@ -23,7 +23,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 
 public final class KitGuiService {
     public enum Screen { PLAYER_LIST, PLAYER_DETAIL, ADMIN_LIST, EDITOR, DELETE_CONFIRM }
@@ -46,6 +45,7 @@ public final class KitGuiService {
     }
 
     private static final int PAGE_SIZE = 45;
+    private static final int PLAYER_CLAIM_SLOT = 22;
 
     private final MiraKitsPlugin plugin;
     private final MiraCore core;
@@ -99,31 +99,15 @@ public final class KitGuiService {
         KitMeta meta = kits.meta(id);
         if ((!meta.visible() || !meta.enabled()) && !player.hasPermission("mirakits.admin")) return false;
 
+        // The player-facing kit screen deliberately exposes no price, cooldown or admin
+        // controls. Those settings remain enforced by claim() and are editable only in the
+        // mirakits.admin editor. Players see one central action: Claim Kit.
         Inventory inventory = Bukkit.createInventory(
                 new Holder(Screen.PLAYER_DETAIL, id, 0),
                 45,
                 Component.text(meta.displayName(), NamedTextColor.DARK_PURPLE)
         );
-        inventory.setItem(13, kitPlaceholder(id));
-
-        long nextUse = kits.nextUse(player, id);
-        String cooldownText = nextUse == 0L ? "Ready"
-                : nextUse < 0L ? "Already claimed"
-                : KitText.duration(nextUse - System.currentTimeMillis());
-        inventory.setItem(29, controlWithLore(Material.CLOCK, "Cooldown", NamedTextColor.AQUA,
-                List.of(Component.text(cooldownText, nextUse == 0L ? NamedTextColor.GREEN : NamedTextColor.YELLOW))));
-
-        inventory.setItem(31, controlWithLore(Material.GOLD_INGOT, "Price", NamedTextColor.GOLD,
-                List.of(Component.text(KitText.money(meta.price(), kits.currencySymbol()), NamedTextColor.YELLOW))));
-
-        boolean permitted = kits.hasKitPermission(player, id);
-        Material claimMaterial = permitted ? Material.LIME_CONCRETE : Material.RED_CONCRETE;
-        String claimName = permitted ? "Claim Kit" : "Kit Locked";
-        inventory.setItem(33, controlWithLore(claimMaterial, claimName,
-                permitted ? NamedTextColor.GREEN : NamedTextColor.RED,
-                permitted ? List.of(Component.text("Click to receive this kit.", NamedTextColor.GRAY))
-                        : List.of(Component.text("Missing essentials.kits." + id, NamedTextColor.GRAY))));
-        inventory.setItem(36, control(Material.ARROW, "Back", NamedTextColor.YELLOW));
+        inventory.setItem(PLAYER_CLAIM_SLOT, control(Material.LIME_CONCRETE, "Claim Kit", NamedTextColor.GREEN));
         player.openInventory(inventory);
         return true;
     }
@@ -218,8 +202,7 @@ public final class KitGuiService {
         switch (result) {
             case SUCCESS -> {
                 KitMeta meta = kits.meta(id);
-                core.messages().send(player, "&aClaimed &f" + meta.displayName() + "&a for &6"
-                        + KitText.money(meta.price(), kits.currencySymbol()) + "&a.");
+                core.messages().send(player, "&aClaimed &f" + meta.displayName() + "&a.");
                 player.closeInventory();
             }
             case NOT_FOUND -> core.messages().send(player, "&cThat kit no longer exists in Essentials.");
