@@ -4,38 +4,45 @@ GUI-first kit claiming and administration for the Mira Paper ecosystem.
 
 ## Download
 
-**Current release: MiraKits v0.1.2**
+**Current release: MiraKits v0.1.4**
 
-- [Download MiraKits-0.1.2.jar](https://github.com/FiveSOCE/Mira-Kits/releases/download/v0.1.2/MiraKits-0.1.2.jar)
-- [View MiraKits v0.1.2 release](https://github.com/FiveSOCE/Mira-Kits/releases/tag/v0.1.2)
+- [Download MiraKits-0.1.4.jar](https://github.com/FiveSOCE/Mira-Kits/releases/download/v0.1.4/MiraKits-0.1.4.jar)
+- [View MiraKits v0.1.4 release](https://github.com/FiveSOCE/Mira-Kits/releases/tag/v0.1.4)
+- [View all releases](https://github.com/FiveSOCE/Mira-Kits/releases)
 
-SHA-256: `59074cdde7e9c2dffcc57be1b87b06f16149f95a121fb72fa7f5d957d7e6445f`
+SHA-256: `881e47c3de7080c7368f696049bf06d6fdbd4314ebd460522a427b58495f242c`
 
-MiraKits does **not** maintain a second kit database. EssentialsX `kits.yml` is the source of truth for kit existence, item contents and cooldowns. MiraKits adds a player GUI, Essentials-backed economy charging, visible/hidden and enabled/disabled metadata, and a GUI admin editor.
+MiraKits does **not** maintain a second kit database. EssentialsX `kits.yml` remains the source of truth for kit existence, item contents and cooldowns. MiraKits adds the player GUI, Essentials-backed economy charging, visibility/enabled metadata, and GUI administration.
 
-## Player flow
+## Player GUI
 
-`/kits`, `/kit`, `/mirakits` and `/mkits` route players into the GUI. Visible + enabled kits are always listed. Essentials permission `essentials.kits.<kit>` is checked when a player attempts to claim the kit.
+`/kits`, `/kit`, `/mirakits` and `/mkits` route players into the MiraKits GUI.
 
-Every kit is represented in the main list by an enchanted Ender Chest named after the kit. Its lore is generated from the actual Essentials kit contents. Enchantments are shown on indented green lines using Roman numerals.
+The v0.1.4 player list is compact and dynamic:
 
-Example:
+- Up to 7 available kits: 9x3
+- 8-14 available kits: 9x4
+- Additional rows are added as needed, with pagination retained for very large kit sets
+- Only visible, enabled kits the player is actually permitted to claim are shown
+- Kit icons are Ender Chests without enchant glint
+- Empty/dead spaces use blank grey stained glass panes with forced enchant glint
+- The glass creates the visual glow while kit icons remain clean
+- The Close button is centered on the bottom row
+
+For 8 kits the layout is:
 
 ```text
-Starter Kit
-Iron Helmet
- - Protection V
-Iron Chestplate
- - Protection V
- - Unbreaking III
-Iron Leggings
-Iron Boots
-Iron Sword
-64x Apples
-5x Ender Pearls
+XXXXXXXXX
+XOXOXOXOX
+XOXOXOXOX
+XXXXMXXXX
 ```
 
-Opening a kit now shows a deliberately minimal player-facing screen with only a centered **Claim Kit** button. Price and cooldown remain enforced during the claim but are not exposed in the player GUI.
+`X` = glowing grey glass, `O` = kit, `M` = Close.
+
+Kit lore is generated from the actual Essentials kit contents and includes item enchantments using Roman numerals.
+
+Opening a kit shows a deliberately minimal player-facing screen with only a centered **Claim Kit** button. Price and cooldown remain enforced during the claim but are not exposed in the player GUI.
 
 ## Admin GUI
 
@@ -43,57 +50,29 @@ Opening a kit now shows a deliberately minimal player-facing screen with only a 
 
 Admins with `mirakits.admin` can:
 
-- Create a kit with a private chat naming flow
+- Create kits through a private chat naming flow
 - Copy their current inventory into a kit
-- Open an existing kit and remove/copy items without risking their real inventory
-- Set cooldown in minutes through private chat input
+- Edit existing kit contents safely
+- Set cooldown through private chat input
 - Set price through private chat input
 - Toggle visible/hidden
 - Toggle enabled/disabled
-- Delete an Essentials kit with confirmation
-- Reload Essentials kits + Mira metadata
+- Delete a kit with confirmation
+- Reload Essentials kits and Mira metadata
 
-### Price and cooldown input
-
-Clicking **Set Price** or **Set Cooldown** closes the editor after the inventory click transaction finishes, then arms a private chat prompt.
-
-- The next chat message is captured privately and is not broadcast.
-- Invalid input leaves the GUI closed and keeps waiting for another value.
-- Valid input updates the current kit draft and reopens that kit's admin editor.
-- Type `cancel` to abort and return to the editor.
-
-Saving writes the item list and cooldown directly through EssentialsX's `Kits` API. Kits loaded from Essentials' optional `kits/*.yml` directory are migrated safely into the main `kits.yml` when edited.
+Valid chat input updates the current draft and reopens the editor. Invalid input keeps waiting without broadcasting the message. Type `cancel` to abort the prompt.
 
 ## Metadata
 
-Only Mira-specific fields are stored in `plugins/MiraKits/kit-meta.yml`:
-
-```yaml
-kits:
-  starter_kit:
-    display-name: Starter Kit
-    price: '2500'
-    visible: true
-    enabled: true
-```
-
-No item list or cooldown is duplicated there.
+Mira-specific fields are stored in `plugins/MiraKits/kit-meta.yml` while Essentials remains authoritative for actual kit contents and cooldowns.
 
 ## Claim integrity
 
-By default, Essentials `/kit` commands are routed to MiraKits and outside `KitClaimEvent` attempts are cancelled. This prevents bypassing MiraKits prices, disabled state or GUI policy. MiraKits itself opens a short internal claim window when it calls the real Essentials `Kit#expandItems` flow.
+Essentials `/kit` access is routed through MiraKits so prices, cooldowns, disabled state and permission rules cannot be bypassed through the normal player command flow.
 
 ## MiraNPC integration
 
-MiraKits registers `MiraKitsApi` in MiraCore's service registry:
-
-```java
-MiraKitsApi.openKits(Player player)
-MiraKitsApi.openKit(Player player, String kitId)
-MiraKitsApi.kitIds()
-```
-
-MiraNPC can therefore open the main kit GUI or a specific kit GUI without dispatching commands or duplicating kit logic.
+MiraKits registers `MiraKitsApi` in MiraCore so MiraNPC can open the main kits GUI or a specific kit directly without duplicating kit logic.
 
 ## Requirements
 
