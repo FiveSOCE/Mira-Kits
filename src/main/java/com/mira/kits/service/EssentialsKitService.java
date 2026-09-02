@@ -40,9 +40,7 @@ public final class EssentialsKitService {
         this.metadata = metadata;
     }
 
-    public IEssentials essentials() {
-        return essentials;
-    }
+    public IEssentials essentials() { return essentials; }
 
     public Set<String> kitIds() {
         List<String> sorted = new ArrayList<>(essentials.getKits().getKitKeys());
@@ -61,9 +59,7 @@ public final class EssentialsKitService {
         return essentials.getKits().matchKit(KitText.normalizeId(input));
     }
 
-    public KitMeta meta(String id) {
-        return metadata.get(id);
-    }
+    public KitMeta meta(String id) { return metadata.get(id); }
 
     public String currencySymbol() {
         String symbol = essentials.getSettings().getCurrencySymbol();
@@ -100,24 +96,27 @@ public final class EssentialsKitService {
     }
 
     public List<ItemStack> previewItems(String id) {
+        return previewSlots(id).values().stream().map(ItemStack::clone).toList();
+    }
+
+    /** Exact parsed kit inventory positions, preserving the actual ItemStacks Essentials will deliver. */
+    public Map<Integer, ItemStack> previewSlots(String id) {
         ParsedKit parsed = parseKit(id);
-        return parsed.items().entrySet().stream()
+        Map<Integer, ItemStack> copy = new LinkedHashMap<>();
+        parsed.items().entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
-                .map(entry -> entry.getValue().clone())
-                .toList();
+                .forEach(entry -> copy.put(entry.getKey(), entry.getValue().clone()));
+        return copy;
+    }
+
+    /** Non-item Essentials kit lines, such as commands or currency rewards, shown by the inspector for completeness. */
+    public List<String> previewAdditionalLines(String id) {
+        return List.copyOf(parseKit(id).passthrough());
     }
 
     public AdminEditSession loadDraft(String id) {
         KitMeta meta = meta(id);
-        AdminEditSession session = new AdminEditSession(
-                id,
-                false,
-                meta.displayName(),
-                delaySeconds(id),
-                meta.price(),
-                meta.visible(),
-                meta.enabled()
-        );
+        AdminEditSession session = new AdminEditSession(id, false, meta.displayName(), delaySeconds(id), meta.price(), meta.visible(), meta.enabled());
         ParsedKit parsed = parseKit(id);
         parsed.items().forEach(session::putItem);
         session.passthroughLines().addAll(parsed.passthrough());
@@ -134,26 +133,16 @@ public final class EssentialsKitService {
         ItemStack[] contents = player.getInventory().getContents();
         for (int slot = 0; slot < contents.length && slot < 45; slot++) {
             ItemStack item = contents[slot];
-            if (item != null && !item.getType().isAir()) {
-                session.putItem(slot, item);
-            }
+            if (item != null && !item.getType().isAir()) session.putItem(slot, item);
         }
     }
 
     public boolean saveDraft(AdminEditSession session) {
         if (session.items().isEmpty() && session.passthroughLines().isEmpty()) return false;
         List<String> lines = serialize(session);
-        if (!session.newKit() && exists(session.id())) {
-            essentials.getKits().removeKit(session.id());
-        }
+        if (!session.newKit() && exists(session.id())) essentials.getKits().removeKit(session.id());
         essentials.getKits().addKit(session.id(), lines, session.delaySeconds());
-        metadata.save(new KitMeta(
-                session.id(),
-                session.displayName(),
-                session.price(),
-                session.visible(),
-                session.enabled()
-        ));
+        metadata.save(new KitMeta(session.id(), session.displayName(), session.price(), session.visible(), session.enabled()));
         return true;
     }
 
@@ -170,44 +159,26 @@ public final class EssentialsKitService {
     public ClaimResult claim(Player player, String id) {
         String matched = match(id);
         if (matched == null) return ClaimResult.NOT_FOUND;
-
         KitMeta meta = meta(matched);
-        if (!meta.enabled() && !player.hasPermission("mirakits.admin")) {
-            return ClaimResult.DISABLED;
-        }
+        if (!meta.enabled() && !player.hasPermission("mirakits.admin")) return ClaimResult.DISABLED;
 
         try {
             User user = essentials.getUser(player);
             Kit kit = new Kit(matched, essentials);
-
-            if (!user.isAuthorized("essentials.kits." + matched.toLowerCase(Locale.ROOT))) {
-                return ClaimResult.NO_PERMISSION;
-            }
-
+            if (!user.isAuthorized("essentials.kits." + matched.toLowerCase(Locale.ROOT))) return ClaimResult.NO_PERMISSION;
             long nextUse = kit.getNextUse(user);
-            if (nextUse != 0L) {
-                return ClaimResult.COOLDOWN;
-            }
-
+            if (nextUse != 0L) return ClaimResult.COOLDOWN;
             BigDecimal price = meta.price().max(BigDecimal.ZERO);
-            if (price.signum() > 0 && !user.canAfford(price)) {
-                return ClaimResult.INSUFFICIENT_FUNDS;
-            }
+            if (price.signum() > 0 && !user.canAfford(price)) return ClaimResult.INSUFFICIENT_FUNDS;
 
             internalClaims.add(player.getUniqueId());
             boolean expanded;
-            try {
-                expanded = kit.expandItems(user);
-            } finally {
-                internalClaims.remove(player.getUniqueId());
-            }
-
+            try { expanded = kit.expandItems(user); }
+            finally { internalClaims.remove(player.getUniqueId()); }
             if (!expanded) return ClaimResult.INVENTORY_FULL_OR_CANCELLED;
 
             kit.setTime(user);
-            if (price.signum() > 0) {
-                user.takeMoney(price);
-            }
+            if (price.signum() > 0) user.takeMoney(price);
             return ClaimResult.SUCCESS;
         } catch (Exception ex) {
             plugin.getLogger().log(Level.WARNING, "Could not claim Essentials kit " + matched + " for " + player.getName(), ex);
@@ -215,9 +186,7 @@ public final class EssentialsKitService {
         }
     }
 
-    public boolean isInternalClaim(UUID playerId) {
-        return internalClaims.contains(playerId);
-    }
+    public boolean isInternalClaim(UUID playerId) { return internalClaims.contains(playerId); }
 
     private ParsedKit parseKit(String id) {
         Map<Integer, ItemStack> items = new LinkedHashMap<>();
@@ -231,14 +200,9 @@ public final class EssentialsKitService {
                     continue;
                 }
                 int slot = parsed.slot();
-                if (slot < 0 || slot >= 45 || items.containsKey(slot)) {
-                    slot = firstFree(items);
-                }
-                if (slot < 0 || slot >= 45) {
-                    passthrough.add(line);
-                } else {
-                    items.put(slot, parsed.item());
-                }
+                if (slot < 0 || slot >= 45 || items.containsKey(slot)) slot = firstFree(items);
+                if (slot < 0 || slot >= 45) passthrough.add(line);
+                else items.put(slot, parsed.item());
             }
         } catch (Exception ex) {
             plugin.getLogger().log(Level.WARNING, "Could not read Essentials kit " + id, ex);
@@ -253,11 +217,8 @@ public final class EssentialsKitService {
         if (payload.startsWith("slot:")) {
             int space = payload.indexOf(' ');
             if (space <= 5) return new ParsedLine(-1, null);
-            try {
-                slot = Integer.parseInt(payload.substring(5, space));
-            } catch (NumberFormatException ex) {
-                return new ParsedLine(-1, null);
-            }
+            try { slot = Integer.parseInt(payload.substring(5, space)); }
+            catch (NumberFormatException ex) { return new ParsedLine(-1, null); }
             payload = payload.substring(space + 1).trim();
         }
 
@@ -280,9 +241,7 @@ public final class EssentialsKitService {
             ItemStack stack = essentials.getItemDb().get(parts[0], amount);
             if (stack == null || stack.getType() == Material.AIR) return new ParsedLine(slot, null);
             MetaItemStack metaStack = new MetaItemStack(stack);
-            if (parts.length > 2) {
-                metaStack.parseStringMeta(null, essentials.getSettings().allowUnsafeEnchantments(), parts, 2, essentials);
-            }
+            if (parts.length > 2) metaStack.parseStringMeta(null, essentials.getSettings().allowUnsafeEnchantments(), parts, 2, essentials);
             return new ParsedLine(slot, metaStack.getItemStack());
         } catch (Exception ex) {
             plugin.getLogger().log(Level.FINE, "Could not parse kit line: " + original, ex);
@@ -300,12 +259,9 @@ public final class EssentialsKitService {
         for (Map.Entry<Integer, ItemStack> entry : sorted) {
             ItemStack item = entry.getValue();
             if (item == null || item.getType().isAir()) continue;
-            String payload;
-            if (better) {
-                payload = "@" + Base64.getEncoder().encodeToString(provider.serializeItem(item));
-            } else {
-                payload = essentials.getItemDb().serialize(item);
-            }
+            String payload = better
+                    ? "@" + Base64.getEncoder().encodeToString(provider.serializeItem(item))
+                    : essentials.getItemDb().serialize(item);
             lines.add("slot:" + entry.getKey() + " " + payload);
         }
         lines.addAll(session.passthroughLines());
@@ -313,15 +269,10 @@ public final class EssentialsKitService {
     }
 
     private static int firstFree(Map<Integer, ItemStack> items) {
-        for (int slot = 0; slot < 45; slot++) {
-            if (!items.containsKey(slot)) return slot;
-        }
+        for (int slot = 0; slot < 45; slot++) if (!items.containsKey(slot)) return slot;
         return -1;
     }
 
-    private record ParsedLine(int slot, ItemStack item) {
-    }
-
-    private record ParsedKit(Map<Integer, ItemStack> items, List<String> passthrough) {
-    }
+    private record ParsedLine(int slot, ItemStack item) {}
+    private record ParsedKit(Map<Integer, ItemStack> items, List<String> passthrough) {}
 }
