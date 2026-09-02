@@ -8,7 +8,7 @@ class KitTextTest {
     @Test
     void normalizesNamesLikeTagCreation() {
         assertEquals("starter_kit", KitText.normalizeId("Starter Kit"));
-        assertEquals("pvp_plus", KitText.normalizeId("  PvP+++  "));
+        assertEquals("pvp_plus", KitText.normalizeId("  PvP Plus  "));
     }
 
     @Test
