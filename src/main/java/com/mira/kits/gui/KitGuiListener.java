@@ -20,7 +20,6 @@ import java.util.List;
 
 public final class KitGuiListener implements Listener {
     private static final int PAGE_SIZE = 45;
-    private static final int PLAYER_CLAIM_SLOT = 22;
 
     private final MiraCore core;
     private final EssentialsKitService kits;
@@ -47,7 +46,7 @@ public final class KitGuiListener implements Listener {
         if (raw < 0) return;
 
         switch (holder.screen()) {
-            case PLAYER_LIST -> playerListClick(player, holder, raw, event.getView().getTopInventory().getSize());
+            case PLAYER_LIST -> playerListClick(player, holder, event, raw, event.getView().getTopInventory().getSize());
             case PLAYER_DETAIL -> detailClick(player, holder, raw);
             case ADMIN_LIST -> adminListClick(player, holder, raw);
             case EDITOR -> editorClick(player, event, raw);
@@ -57,9 +56,7 @@ public final class KitGuiListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onDrag(InventoryDragEvent event) {
-        if (event.getView().getTopInventory().getHolder() instanceof KitGuiService.Holder) {
-            event.setCancelled(true);
-        }
+        if (event.getView().getTopInventory().getHolder() instanceof KitGuiService.Holder) event.setCancelled(true);
     }
 
     @EventHandler
@@ -68,10 +65,14 @@ public final class KitGuiListener implements Listener {
         prompts.clear(event.getPlayer().getUniqueId());
     }
 
-    private void playerListClick(Player player, KitGuiService.Holder holder, int raw, int size) {
+    private void playerListClick(Player player, KitGuiService.Holder holder, InventoryClickEvent event, int raw, int size) {
         String id = holder.kitAt(raw);
         if (id != null) {
-            gui.openDetail(player, id);
+            if (event.isRightClick()) {
+                gui.openDetail(player, id);
+            } else if (event.isLeftClick()) {
+                gui.claimAndRespond(player, id);
+            }
             return;
         }
 
@@ -82,9 +83,7 @@ public final class KitGuiListener implements Listener {
     }
 
     private void detailClick(Player player, KitGuiService.Holder holder, int raw) {
-        if (raw == PLAYER_CLAIM_SLOT && holder.kitId() != null) {
-            gui.claimAndRespond(player, holder.kitId());
-        }
+        if (raw == 45) gui.openPlayerList(player);
     }
 
     private void adminListClick(Player player, KitGuiService.Holder holder, int raw) {
