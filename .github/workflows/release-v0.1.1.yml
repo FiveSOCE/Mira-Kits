@@ -1,0 +1,40 @@
+name: Release v0.1.1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/release-v0.1.1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tested source
+        uses: actions/checkout@v4
+        with:
+          ref: 85566f419667196b243d119fba6fd80bec1a9de0
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10'
+      - name: Test and build
+        run: gradle clean test build --stacktrace
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create v0.1.1 \
+            build/libs/MiraKits-0.1.1.jar \
+            --target 85566f419667196b243d119fba6fd80bec1a9de0 \
+            --title "MiraKits v0.1.1" \
+            --notes "Fixes cooldown and price editor prompts: the GUI closes, waits for private chat input, stays closed on invalid input, and reopens the editor after valid input."
