@@ -6,21 +6,15 @@ import com.mira.kits.model.KitMeta;
 import com.mira.kits.prompt.ChatPromptService;
 import com.mira.kits.service.AdminSessionService;
 import com.mira.kits.service.EssentialsKitService;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,20 +36,6 @@ public final class KitGuiListener implements Listener {
         this.sessions = sessions;
         this.gui = gui;
         this.prompts = prompts;
-    }
-
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void onOpen(InventoryOpenEvent event) {
-        if (!(event.getPlayer() instanceof Player)) return;
-        if (!(event.getInventory().getHolder() instanceof KitGuiService.Holder holder)) return;
-        if (holder.screen() != KitGuiService.Screen.PLAYER_DETAIL) return;
-
-        // Player-facing kit details deliberately expose no admin metadata. Price and
-        // cooldown remain enforced by the claim service but only administrators can edit
-        // or inspect those settings through the admin editor.
-        Inventory inventory = event.getInventory();
-        inventory.clear();
-        inventory.setItem(PLAYER_CLAIM_SLOT, claimButton());
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -229,14 +209,5 @@ public final class KitGuiListener implements Listener {
         List<String> all = new ArrayList<>(kits.kitIds());
         int index = page * PAGE_SIZE + slot;
         return index >= 0 && index < all.size() ? all.get(index) : null;
-    }
-
-    private ItemStack claimButton() {
-        ItemStack item = new ItemStack(Material.LIME_CONCRETE);
-        ItemMeta meta = item.getItemMeta();
-        meta.displayName(Component.text("Claim Kit", NamedTextColor.GREEN)
-                .decoration(TextDecoration.ITALIC, false));
-        item.setItemMeta(meta);
-        return item;
     }
 }
