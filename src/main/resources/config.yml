@@ -1,0 +1,9 @@
+# MiraKits is a GUI layer over EssentialsX kits. Essentials kits.yml remains
+# the source of truth for kit existence, contents and cooldowns.
+
+intercept-essentials-kit-commands: true
+enforce-gui-claims: true
+
+player-gui-title: "Kits"
+admin-gui-title: "Kit Administration"
+editor-gui-title-prefix: "Edit Kit: "
