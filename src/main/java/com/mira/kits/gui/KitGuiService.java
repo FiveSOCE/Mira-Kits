@@ -13,7 +13,6 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -21,7 +20,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,7 +53,6 @@ public final class KitGuiService {
 
     private static final int PAGE_SIZE = 45;
     private static final int PLAYER_KITS_PER_PAGE = 28;
-    private static final int PLAYER_CLAIM_SLOT = 22;
 
     private final MiraKitsPlugin plugin;
     private final MiraCore core;
@@ -100,6 +97,7 @@ public final class KitGuiService {
                 new Holder(Screen.PLAYER_LIST, null, safePage, kitSlots),
                 size,
                 Component.text(plugin.getConfig().getString("player-gui-title", "Kits"), NamedTextColor.DARK_PURPLE)
+                        .decoration(TextDecoration.ITALIC, false)
         );
 
         ItemStack filler = glowingGlass();
@@ -113,25 +111,45 @@ public final class KitGuiService {
         player.openInventory(inventory);
     }
 
+    /**
+     * Exact read-only kit inspection. The first 45 slots mirror the parsed Essentials kit
+     * inventory positions using cloned ItemStacks, preserving names, lore, enchants, PDC,
+     * quantities and all other item metadata. The bottom row contains only summary/details.
+     */
     public boolean openDetail(Player player, String input) {
         String id = kits.match(input);
         if (id == null) return false;
         KitMeta meta = kits.meta(id);
-        if ((!meta.visible() || !meta.enabled()) && !player.hasPermission("mirakits.admin")) return false;
+        if ((!meta.visible() || !meta.enabled() || !kits.hasKitPermission(player, id))
+                && !player.hasPermission("mirakits.admin")) return false;
 
         Inventory inventory = Bukkit.createInventory(
                 new Holder(Screen.PLAYER_DETAIL, id, 0),
-                45,
-                Component.text(meta.displayName(), NamedTextColor.DARK_PURPLE)
+                54,
+                Component.text("Inspect: " + meta.displayName(), NamedTextColor.DARK_PURPLE)
+                        .decoration(TextDecoration.ITALIC, false)
         );
-        inventory.setItem(PLAYER_CLAIM_SLOT, control(Material.LIME_CONCRETE, "Claim Kit", NamedTextColor.GREEN));
+
+        kits.previewSlots(id).forEach((slot, item) -> {
+            if (slot >= 0 && slot < 45 && item != null && !item.getType().isAir()) {
+                inventory.setItem(slot, item.clone());
+            }
+        });
+
+        ItemStack filler = glowingGlass();
+        for (int slot = 45; slot < 54; slot++) inventory.setItem(slot, filler.clone());
+        inventory.setItem(45, control(Material.ARROW, "Back", NamedTextColor.YELLOW));
+        inventory.setItem(49, kitInfo(id));
+        inventory.setItem(53, controlWithLore(Material.ENDER_CHEST, meta.displayName(), NamedTextColor.GOLD,
+                List.of(
+                        Component.text("Left-click this kit in /kits to claim it.", NamedTextColor.GRAY),
+                        Component.text("This screen is inspection only.", NamedTextColor.DARK_GRAY)
+                )));
         player.openInventory(inventory);
         return true;
     }
 
-    public void openAdminList(Player player) {
-        openAdminList(player, 0);
-    }
+    public void openAdminList(Player player) { openAdminList(player, 0); }
 
     public void openAdminList(Player player, int page) {
         if (!player.hasPermission("mirakits.admin")) {
@@ -142,14 +160,12 @@ public final class KitGuiService {
         int maxPage = Math.max(0, (all.size() - 1) / PAGE_SIZE);
         int safePage = Math.max(0, Math.min(page, maxPage));
         Inventory inventory = Bukkit.createInventory(
-                new Holder(Screen.ADMIN_LIST, null, safePage),
-                54,
+                new Holder(Screen.ADMIN_LIST, null, safePage), 54,
                 Component.text(plugin.getConfig().getString("admin-gui-title", "Kit Administration"), NamedTextColor.DARK_RED)
+                        .decoration(TextDecoration.ITALIC, false)
         );
         int start = safePage * PAGE_SIZE;
-        for (int i = 0; i < PAGE_SIZE && start + i < all.size(); i++) {
-            inventory.setItem(i, kitPlaceholder(all.get(start + i)));
-        }
+        for (int i = 0; i < PAGE_SIZE && start + i < all.size(); i++) inventory.setItem(i, kitPlaceholder(all.get(start + i)));
         if (safePage > 0) inventory.setItem(45, control(Material.ARROW, "Previous Page", NamedTextColor.YELLOW));
         inventory.setItem(48, control(Material.EMERALD_BLOCK, "Create Kit", NamedTextColor.GREEN));
         inventory.setItem(49, control(Material.BARRIER, "Close", NamedTextColor.RED));
@@ -161,15 +177,11 @@ public final class KitGuiService {
 
     public void openEditor(Player player) {
         AdminEditSession session = sessions.get(player.getUniqueId()).orElse(null);
-        if (session == null) {
-            openAdminList(player);
-            return;
-        }
+        if (session == null) { openAdminList(player); return; }
         String prefix = plugin.getConfig().getString("editor-gui-title-prefix", "Edit Kit: ");
         Inventory inventory = Bukkit.createInventory(
-                new Holder(Screen.EDITOR, session.id(), 0),
-                54,
-                Component.text(prefix + session.displayName(), NamedTextColor.DARK_RED)
+                new Holder(Screen.EDITOR, session.id(), 0), 54,
+                Component.text(prefix + session.displayName(), NamedTextColor.DARK_RED).decoration(TextDecoration.ITALIC, false)
         );
         session.items().forEach((slot, item) -> {
             if (slot >= 0 && slot < 45) inventory.setItem(slot, item.clone());
@@ -187,27 +199,19 @@ public final class KitGuiService {
         inventory.setItem(50, control(session.enabled() ? Material.LIME_CONCRETE : Material.RED_CONCRETE,
                 session.enabled() ? "Enabled" : "Disabled", session.enabled() ? NamedTextColor.GREEN : NamedTextColor.RED));
         inventory.setItem(51, controlWithLore(Material.PAPER, "Editor Help", NamedTextColor.YELLOW,
-                List.of(
-                        Component.text("Click a kit item above to remove it.", NamedTextColor.GRAY),
-                        Component.text("Click an item in your inventory to copy it in.", NamedTextColor.GRAY)
-                )));
-        if (!session.newKit()) {
-            inventory.setItem(52, control(Material.TNT, "Delete Kit", NamedTextColor.RED));
-        }
+                List.of(Component.text("Click a kit item above to remove it.", NamedTextColor.GRAY),
+                        Component.text("Click an item in your inventory to copy it in.", NamedTextColor.GRAY))));
+        if (!session.newKit()) inventory.setItem(52, control(Material.TNT, "Delete Kit", NamedTextColor.RED));
         inventory.setItem(53, control(Material.EMERALD_BLOCK, "Save Kit", NamedTextColor.GREEN));
         player.openInventory(inventory);
     }
 
     public void openDeleteConfirm(Player player) {
         AdminEditSession session = sessions.get(player.getUniqueId()).orElse(null);
-        if (session == null || session.newKit()) {
-            openAdminList(player);
-            return;
-        }
+        if (session == null || session.newKit()) { openAdminList(player); return; }
         Inventory inventory = Bukkit.createInventory(
-                new Holder(Screen.DELETE_CONFIRM, session.id(), 0),
-                27,
-                Component.text("Delete " + session.displayName() + "?", NamedTextColor.DARK_RED)
+                new Holder(Screen.DELETE_CONFIRM, session.id(), 0), 27,
+                Component.text("Delete " + session.displayName() + "?", NamedTextColor.DARK_RED).decoration(TextDecoration.ITALIC, false)
         );
         inventory.setItem(11, control(Material.LIME_CONCRETE, "Keep Kit", NamedTextColor.GREEN));
         inventory.setItem(15, control(Material.RED_CONCRETE, "Delete Permanently", NamedTextColor.RED));
@@ -237,16 +241,38 @@ public final class KitGuiService {
         }
     }
 
+    /** Player list icon: intentionally just the kit name, no giant contents lore. */
     public ItemStack kitPlaceholder(String id) {
         KitMeta metaData = kits.meta(id);
         ItemStack chest = new ItemStack(Material.ENDER_CHEST);
         ItemMeta meta = chest.getItemMeta();
-        meta.displayName(Component.text(metaData.displayName(), NamedTextColor.GOLD)
-                .decoration(TextDecoration.ITALIC, false));
+        meta.displayName(Component.text(metaData.displayName(), NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
         meta.setEnchantmentGlintOverride(false);
-        meta.lore(buildKitLore(id));
+        meta.lore(null);
         chest.setItemMeta(meta);
         return chest;
+    }
+
+    private ItemStack kitInfo(String id) {
+        KitMeta meta = kits.meta(id);
+        List<Component> lore = new ArrayList<>();
+        lore.add(Component.text("Price: ", NamedTextColor.GRAY)
+                .append(Component.text(KitText.money(meta.price(), kits.currencySymbol()), NamedTextColor.WHITE)));
+        lore.add(Component.text("Cooldown: ", NamedTextColor.GRAY)
+                .append(Component.text(cooldownLabel(kits.delaySeconds(id)), NamedTextColor.WHITE)));
+        lore.add(Component.empty());
+        lore.add(Component.text("Items shown above are exact copies", NamedTextColor.DARK_GRAY));
+        lore.add(Component.text("of the configured Essentials kit items.", NamedTextColor.DARK_GRAY));
+
+        List<String> additional = kits.previewAdditionalLines(id);
+        if (!additional.isEmpty()) {
+            lore.add(Component.empty());
+            lore.add(Component.text("Additional kit rewards/actions:", NamedTextColor.YELLOW));
+            for (String line : additional) {
+                lore.add(Component.text(line, NamedTextColor.GRAY));
+            }
+        }
+        return controlWithLore(Material.BOOK, "Kit Details", NamedTextColor.AQUA, lore);
     }
 
     private Map<Integer, String> buildPlayerKitSlots(List<String> pageKits, int rows) {
@@ -288,56 +314,10 @@ public final class KitGuiService {
         return glass;
     }
 
-    private List<Component> buildKitLore(String id) {
-        List<Component> lore = new ArrayList<>();
-        for (ItemStack item : kits.previewItems(id)) {
-            lore.add(itemLine(item));
-            item.getEnchantments().entrySet().stream()
-                    .sorted(Comparator.comparing(entry -> entry.getKey().getKey().getKey()))
-                    .forEach(entry -> lore.add(Component.text(" - ", NamedTextColor.WHITE)
-                            .append(Component.text(enchantName(entry.getKey()) + " " + KitText.roman(entry.getValue()), NamedTextColor.GREEN))
-                            .decoration(TextDecoration.ITALIC, false)));
-        }
-        if (lore.isEmpty()) {
-            lore.add(Component.text("Empty Kit", NamedTextColor.DARK_GRAY).decoration(TextDecoration.ITALIC, false));
-        }
-        return lore;
-    }
-
-    private Component itemLine(ItemStack item) {
-        Component name;
-        if (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
-            name = item.getItemMeta().displayName();
-            if (name == null) name = Component.text(materialName(item.getType(), item.getAmount() > 1));
-        } else {
-            name = Component.text(materialName(item.getType(), item.getAmount() > 1), NamedTextColor.WHITE);
-        }
-        if (item.getAmount() > 1) {
-            return Component.text(item.getAmount() + "x ", NamedTextColor.WHITE)
-                    .append(name)
-                    .decoration(TextDecoration.ITALIC, false);
-        }
-        return name.decoration(TextDecoration.ITALIC, false);
-    }
-
-    private String enchantName(Enchantment enchantment) {
-        return KitText.prettyId(enchantment.getKey().getKey());
-    }
-
-    private String materialName(Material material, boolean plural) {
-        String base = KitText.prettyId(material.name());
-        if (!plural) return base;
-        if (base.endsWith("s")) return base;
-        if (base.endsWith("Axe")) return base + "s";
-        if (base.endsWith("y") && base.length() > 1) return base.substring(0, base.length() - 1) + "ies";
-        return base + "s";
-    }
-
     private String cooldownLabel(long delaySeconds) {
         if (delaySeconds < 0) return "One-time kit";
         if (delaySeconds == 0) return "No cooldown";
-        long minutes = delaySeconds / 60L;
-        return minutes + " minute" + (minutes == 1 ? "" : "s");
+        return KitText.duration(delaySeconds * 1000L);
     }
 
     private ItemStack control(Material material, String name, NamedTextColor color) {
@@ -348,9 +328,7 @@ public final class KitGuiService {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         meta.displayName(Component.text(name, color).decoration(TextDecoration.ITALIC, false));
-        if (!lore.isEmpty()) {
-            meta.lore(lore.stream().map(line -> line.decoration(TextDecoration.ITALIC, false)).toList());
-        }
+        if (!lore.isEmpty()) meta.lore(lore.stream().map(line -> line.decoration(TextDecoration.ITALIC, false)).toList());
         item.setItemMeta(meta);
         return item;
     }
