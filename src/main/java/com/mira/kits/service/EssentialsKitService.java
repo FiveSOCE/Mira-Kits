@@ -1,6 +1,5 @@
 package com.mira.kits.service;
 
-import com.earth2me.essentials.IEssentials;
 import com.earth2me.essentials.Kit;
 import com.earth2me.essentials.MetaItemStack;
 import com.earth2me.essentials.User;
@@ -9,6 +8,7 @@ import com.mira.kits.model.AdminEditSession;
 import com.mira.kits.model.ClaimResult;
 import com.mira.kits.model.KitMeta;
 import com.mira.kits.util.KitText;
+import net.ess3.api.IEssentials;
 import net.ess3.provider.SerializationProvider;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -144,8 +144,6 @@ public final class EssentialsKitService {
         if (session.items().isEmpty() && session.passthroughLines().isEmpty()) return false;
         List<String> lines = serialize(session);
         if (!session.newKit() && exists(session.id())) {
-            // This safely migrates kits from Essentials' optional kits/*.yml files
-            // back into canonical kits.yml while preserving their current contents.
             essentials.getKits().removeKit(session.id());
         }
         essentials.getKits().addKit(session.id(), lines, session.delaySeconds());
