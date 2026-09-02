@@ -2,6 +2,15 @@
 
 GUI-first kit claiming and administration for the Mira Paper ecosystem.
 
+## Download
+
+**Current release: MiraKits v0.1.1**
+
+- [Download MiraKits-0.1.1.jar](https://github.com/FiveSOCE/Mira-Kits/releases/download/v0.1.1/MiraKits-0.1.1.jar)
+- [View MiraKits v0.1.1 release](https://github.com/FiveSOCE/Mira-Kits/releases/tag/v0.1.1)
+
+SHA-256: `bd5a7d7e82455443d718da6c18653246f01ce0c1b79e1ed153518374e9ec60c1`
+
 MiraKits does **not** maintain a second kit database. EssentialsX `kits.yml` is the source of truth for kit existence, item contents and cooldowns. MiraKits adds a player GUI, Essentials-backed economy charging, visible/hidden and enabled/disabled metadata, and a GUI admin editor.
 
 ## Requirements
