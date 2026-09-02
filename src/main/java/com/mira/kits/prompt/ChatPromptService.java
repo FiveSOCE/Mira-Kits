@@ -40,23 +40,35 @@ public final class ChatPromptService implements Listener {
     }
 
     public void beginName(Player player) {
-        prompts.put(player.getUniqueId(), new Prompt(Type.CREATE_NAME));
-        player.closeInventory();
-        core.messages().send(player, "&dCreating a kit. &fEnter the kit name in chat, or type &ccancel&f.");
+        beginPrompt(player, new Prompt(Type.CREATE_NAME),
+                "&dCreating a kit. &fEnter the kit name in chat, or type &ccancel&f.");
     }
 
     public void beginCooldown(Player player) {
         if (sessions.get(player.getUniqueId()).isEmpty()) return;
-        prompts.put(player.getUniqueId(), new Prompt(Type.COOLDOWN));
-        player.closeInventory();
-        core.messages().send(player, "&dSet Kit Cooldown. &fEnter the cooldown in minutes, or type &ccancel&f.");
+        beginPrompt(player, new Prompt(Type.COOLDOWN),
+                "&dSet Kit Cooldown. &fEnter the cooldown in minutes, or type &ccancel&f.");
     }
 
     public void beginPrice(Player player) {
         if (sessions.get(player.getUniqueId()).isEmpty()) return;
-        prompts.put(player.getUniqueId(), new Prompt(Type.PRICE));
+        beginPrompt(player, new Prompt(Type.PRICE),
+                "&dSet Kit Price. &fEnter the price as a number, or type &ccancel&f.");
+    }
+
+    private void beginPrompt(Player player, Prompt prompt, String message) {
+        UUID playerId = player.getUniqueId();
+        prompts.put(playerId, prompt);
+
+        // Closing from inside InventoryClickEvent can be overwritten by the client/server
+        // inventory transaction. Close immediately and once again next tick, then leave the
+        // player in chat-only prompt mode until valid input is received.
         player.closeInventory();
-        core.messages().send(player, "&dSet Kit Price. &fEnter the price as a number, or type &ccancel&f.");
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (!player.isOnline() || prompts.get(playerId) != prompt) return;
+            player.closeInventory();
+            core.messages().send(player, message);
+        });
     }
 
     public void clear(UUID playerId) {
@@ -80,11 +92,7 @@ public final class ChatPromptService implements Listener {
         }
         if (value.equalsIgnoreCase("cancel")) {
             clear(player.getUniqueId());
-            if (prompt.type() == Type.CREATE_NAME) {
-                gui.openAdminList(player);
-            } else {
-                gui.openEditor(player);
-            }
+            reopenAfterPrompt(player, prompt.type() == Type.CREATE_NAME);
             return;
         }
 
@@ -114,14 +122,14 @@ public final class ChatPromptService implements Listener {
         sessions.put(player.getUniqueId(), session);
         clear(player.getUniqueId());
         core.messages().send(player, "&aKit draft created. &7Use the GUI to copy your inventory, set cooldown/price, then save.");
-        gui.openEditor(player);
+        reopenAfterPrompt(player, false);
     }
 
     private void handleCooldown(Player player, String value) {
         AdminEditSession session = sessions.get(player.getUniqueId()).orElse(null);
         if (session == null) {
             clear(player.getUniqueId());
-            gui.openAdminList(player);
+            Bukkit.getScheduler().runTask(plugin, () -> gui.openAdminList(player));
             return;
         }
         try {
@@ -130,7 +138,7 @@ public final class ChatPromptService implements Listener {
             session.delaySeconds(Math.multiplyExact(minutes, 60L));
             clear(player.getUniqueId());
             core.messages().send(player, "&aCooldown set to &f" + minutes + " minute" + (minutes == 1 ? "" : "s") + "&a.");
-            gui.openEditor(player);
+            reopenAfterPrompt(player, false);
         } catch (ArithmeticException | NumberFormatException ex) {
             core.messages().send(player, "&cEnter a whole number of minutes from 0 to 5,256,000, or type cancel.");
         }
@@ -140,7 +148,7 @@ public final class ChatPromptService implements Listener {
         AdminEditSession session = sessions.get(player.getUniqueId()).orElse(null);
         if (session == null) {
             clear(player.getUniqueId());
-            gui.openAdminList(player);
+            Bukkit.getScheduler().runTask(plugin, () -> gui.openAdminList(player));
             return;
         }
         try {
@@ -150,9 +158,17 @@ public final class ChatPromptService implements Listener {
             session.price(price);
             clear(player.getUniqueId());
             core.messages().send(player, "&aKit price set to &6" + KitText.money(price, kits.currencySymbol()) + "&a.");
-            gui.openEditor(player);
+            reopenAfterPrompt(player, false);
         } catch (NumberFormatException ex) {
             core.messages().send(player, "&cEnter a non-negative number with up to 2 decimal places, or type cancel.");
         }
+    }
+
+    private void reopenAfterPrompt(Player player, boolean adminList) {
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (!player.isOnline()) return;
+            if (adminList) gui.openAdminList(player);
+            else gui.openEditor(player);
+        });
     }
 }
