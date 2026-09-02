@@ -1,6 +1,5 @@
 package com.mira.kits;
 
-import com.earth2me.essentials.IEssentials;
 import com.mira.core.api.MiraCore;
 import com.mira.core.api.MiraCoreProvider;
 import com.mira.core.api.ModuleHealth;
@@ -15,6 +14,7 @@ import com.mira.kits.prompt.ChatPromptService;
 import com.mira.kits.service.AdminSessionService;
 import com.mira.kits.service.EssentialsKitService;
 import com.mira.kits.service.KitMetadataStore;
+import net.ess3.api.IEssentials;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
