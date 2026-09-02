@@ -2,7 +2,6 @@ package com.mira.kits.gui;
 
 import com.mira.core.api.MiraCore;
 import com.mira.kits.model.AdminEditSession;
-import com.mira.kits.model.KitMeta;
 import com.mira.kits.prompt.ChatPromptService;
 import com.mira.kits.service.AdminSessionService;
 import com.mira.kits.service.EssentialsKitService;
@@ -48,7 +47,7 @@ public final class KitGuiListener implements Listener {
         if (raw < 0) return;
 
         switch (holder.screen()) {
-            case PLAYER_LIST -> playerListClick(player, holder, raw);
+            case PLAYER_LIST -> playerListClick(player, holder, raw, event.getView().getTopInventory().getSize());
             case PLAYER_DETAIL -> detailClick(player, holder, raw);
             case ADMIN_LIST -> adminListClick(player, holder, raw);
             case EDITOR -> editorClick(player, event, raw);
@@ -69,15 +68,17 @@ public final class KitGuiListener implements Listener {
         prompts.clear(event.getPlayer().getUniqueId());
     }
 
-    private void playerListClick(Player player, KitGuiService.Holder holder, int raw) {
-        if (raw >= 0 && raw < PAGE_SIZE) {
-            String id = playerListId(holder.page(), raw);
-            if (id != null) gui.openDetail(player, id);
+    private void playerListClick(Player player, KitGuiService.Holder holder, int raw, int size) {
+        String id = holder.kitAt(raw);
+        if (id != null) {
+            gui.openDetail(player, id);
             return;
         }
-        if (raw == 45 && holder.page() > 0) gui.openPlayerList(player, holder.page() - 1);
-        else if (raw == 49) player.closeInventory();
-        else if (raw == 53) gui.openPlayerList(player, holder.page() + 1);
+
+        int bottomStart = size - 9;
+        if (raw == bottomStart + 1 && holder.page() > 0) gui.openPlayerList(player, holder.page() - 1);
+        else if (raw == bottomStart + 4) player.closeInventory();
+        else if (raw == bottomStart + 7) gui.openPlayerList(player, holder.page() + 1);
     }
 
     private void detailClick(Player player, KitGuiService.Holder holder, int raw) {
@@ -192,17 +193,6 @@ public final class KitGuiListener implements Listener {
             sessions.clear(player.getUniqueId());
             gui.openAdminList(player);
         }
-    }
-
-    private String playerListId(int page, int slot) {
-        List<String> visible = kits.kitIds().stream()
-                .filter(id -> {
-                    KitMeta meta = kits.meta(id);
-                    return meta.visible() && meta.enabled();
-                })
-                .toList();
-        int index = page * PAGE_SIZE + slot;
-        return index >= 0 && index < visible.size() ? visible.get(index) : null;
     }
 
     private String adminListId(int page, int slot) {
