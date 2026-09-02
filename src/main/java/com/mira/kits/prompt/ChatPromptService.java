@@ -12,6 +12,7 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 
 import java.math.BigDecimal;
@@ -40,34 +41,35 @@ public final class ChatPromptService implements Listener {
     }
 
     public void beginName(Player player) {
+        if (!player.hasPermission("mirakits.admin")) return;
         beginPrompt(player, new Prompt(Type.CREATE_NAME),
                 "&dCreating a kit. &fEnter the kit name in chat, or type &ccancel&f.");
     }
 
     public void beginCooldown(Player player) {
-        if (sessions.get(player.getUniqueId()).isEmpty()) return;
+        if (!player.hasPermission("mirakits.admin") || sessions.get(player.getUniqueId()).isEmpty()) return;
         beginPrompt(player, new Prompt(Type.COOLDOWN),
                 "&dSet Kit Cooldown. &fEnter the cooldown in minutes, or type &ccancel&f.");
     }
 
     public void beginPrice(Player player) {
-        if (sessions.get(player.getUniqueId()).isEmpty()) return;
+        if (!player.hasPermission("mirakits.admin") || sessions.get(player.getUniqueId()).isEmpty()) return;
         beginPrompt(player, new Prompt(Type.PRICE),
                 "&dSet Kit Price. &fEnter the price as a number, or type &ccancel&f.");
     }
 
     private void beginPrompt(Player player, Prompt prompt, String message) {
         UUID playerId = player.getUniqueId();
-        prompts.put(playerId, prompt);
 
-        // Closing from inside InventoryClickEvent can be overwritten by the client/server
-        // inventory transaction. Close immediately and once again next tick, then leave the
-        // player in chat-only prompt mode until valid input is received.
-        player.closeInventory();
+        // Inventory controls are clicked from InventoryClickEvent. Arm the prompt on the
+        // following server tick so the inventory transaction is fully finished before we
+        // close the GUI and switch the player into private chat-input mode.
         Bukkit.getScheduler().runTask(plugin, () -> {
-            if (!player.isOnline() || prompts.get(playerId) != prompt) return;
+            if (!player.isOnline()) return;
+            prompts.put(playerId, prompt);
             player.closeInventory();
             core.messages().send(player, message);
+            core.messages().send(player, "&7Your next chat message is private and will not be broadcast.");
         });
     }
 
@@ -75,11 +77,16 @@ public final class ChatPromptService implements Listener {
         prompts.remove(playerId);
     }
 
-    @EventHandler
+    public boolean awaiting(UUID playerId) {
+        return prompts.containsKey(playerId);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onChat(AsyncChatEvent event) {
         Player player = event.getPlayer();
         Prompt prompt = prompts.get(player.getUniqueId());
         if (prompt == null) return;
+
         event.setCancelled(true);
         String value = PlainTextComponentSerializer.plainText().serialize(event.message()).trim();
         Bukkit.getScheduler().runTask(plugin, () -> handle(player, prompt, value));
@@ -90,8 +97,13 @@ public final class ChatPromptService implements Listener {
             clear(player.getUniqueId());
             return;
         }
+
+        // Ignore a stale scheduled chat callback if a newer prompt replaced it.
+        if (!prompt.equals(prompts.get(player.getUniqueId()))) return;
+
         if (value.equalsIgnoreCase("cancel")) {
             clear(player.getUniqueId());
+            core.messages().send(player, "&eKit input cancelled.");
             reopenAfterPrompt(player, prompt.type() == Type.CREATE_NAME);
             return;
         }
@@ -129,7 +141,7 @@ public final class ChatPromptService implements Listener {
         AdminEditSession session = sessions.get(player.getUniqueId()).orElse(null);
         if (session == null) {
             clear(player.getUniqueId());
-            Bukkit.getScheduler().runTask(plugin, () -> gui.openAdminList(player));
+            gui.openAdminList(player);
             return;
         }
         try {
@@ -148,7 +160,7 @@ public final class ChatPromptService implements Listener {
         AdminEditSession session = sessions.get(player.getUniqueId()).orElse(null);
         if (session == null) {
             clear(player.getUniqueId());
-            Bukkit.getScheduler().runTask(plugin, () -> gui.openAdminList(player));
+            gui.openAdminList(player);
             return;
         }
         try {
