@@ -7,3 +7,12 @@ enforce-gui-claims: true
 player-gui-title: "Kits"
 admin-gui-title: "Kit Administration"
 editor-gui-title-prefix: "Edit Kit: "
+
+# Optional event/temporary availability windows. The key is the Essentials kit id.
+# enabled: false means the kit behaves as a normal permanent kit.
+# Times use ISO-8601 UTC timestamps.
+event-kits:
+  example_event:
+    enabled: false
+    start: "2026-12-01T00:00:00Z"
+    end: "2027-01-01T00:00:00Z"
