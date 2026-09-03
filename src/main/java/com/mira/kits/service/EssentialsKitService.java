@@ -32,15 +32,18 @@ public final class EssentialsKitService {
     private final MiraKitsPlugin plugin;
     private final IEssentials essentials;
     private final KitMetadataStore metadata;
+    private final KitWindowService windows;
     private final Set<UUID> internalClaims = ConcurrentHashMap.newKeySet();
 
-    public EssentialsKitService(MiraKitsPlugin plugin, IEssentials essentials, KitMetadataStore metadata) {
+    public EssentialsKitService(MiraKitsPlugin plugin, IEssentials essentials, KitMetadataStore metadata, KitWindowService windows) {
         this.plugin = plugin;
         this.essentials = essentials;
         this.metadata = metadata;
+        this.windows = windows;
     }
 
     public IEssentials essentials() { return essentials; }
+    public KitWindowService windows() { return windows; }
 
     public Set<String> kitIds() {
         List<String> sorted = new ArrayList<>(essentials.getKits().getKitKeys());
@@ -48,9 +51,7 @@ public final class EssentialsKitService {
         return new LinkedHashSet<>(sorted);
     }
 
-    public boolean exists(String id) {
-        return id != null && essentials.getKits().matchKit(id) != null;
-    }
+    public boolean exists(String id) { return id != null && essentials.getKits().matchKit(id) != null; }
 
     public String match(String input) {
         if (input == null) return null;
@@ -71,48 +72,30 @@ public final class EssentialsKitService {
         if (raw == null) return 0L;
         Object delay = raw.get("delay");
         if (delay instanceof Number number) return number.longValue();
-        try {
-            return delay == null ? 0L : Long.parseLong(delay.toString());
-        } catch (NumberFormatException ex) {
-            return 0L;
-        }
+        try { return delay == null ? 0L : Long.parseLong(delay.toString()); }
+        catch (NumberFormatException ex) { return 0L; }
     }
 
     public long nextUse(Player player, String id) {
-        try {
-            User user = essentials.getUser(player);
-            return new Kit(id, essentials).getNextUse(user);
-        } catch (Exception ex) {
-            return 0L;
-        }
+        try { return new Kit(id, essentials).getNextUse(essentials.getUser(player)); }
+        catch (Exception ex) { return 0L; }
     }
 
     public boolean hasKitPermission(Player player, String id) {
-        try {
-            return essentials.getUser(player).isAuthorized("essentials.kits." + id.toLowerCase(Locale.ROOT));
-        } catch (RuntimeException ex) {
-            return false;
-        }
+        try { return essentials.getUser(player).isAuthorized("essentials.kits." + id.toLowerCase(Locale.ROOT)); }
+        catch (RuntimeException ex) { return false; }
     }
 
-    public List<ItemStack> previewItems(String id) {
-        return previewSlots(id).values().stream().map(ItemStack::clone).toList();
-    }
+    public List<ItemStack> previewItems(String id) { return previewSlots(id).values().stream().map(ItemStack::clone).toList(); }
 
-    /** Exact parsed kit inventory positions, preserving the actual ItemStacks Essentials will deliver. */
     public Map<Integer, ItemStack> previewSlots(String id) {
         ParsedKit parsed = parseKit(id);
         Map<Integer, ItemStack> copy = new LinkedHashMap<>();
-        parsed.items().entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .forEach(entry -> copy.put(entry.getKey(), entry.getValue().clone()));
+        parsed.items().entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> copy.put(entry.getKey(), entry.getValue().clone()));
         return copy;
     }
 
-    /** Non-item Essentials kit lines, such as commands or currency rewards, shown by the inspector for completeness. */
-    public List<String> previewAdditionalLines(String id) {
-        return List.copyOf(parseKit(id).passthrough());
-    }
+    public List<String> previewAdditionalLines(String id) { return List.copyOf(parseKit(id).passthrough()); }
 
     public AdminEditSession loadDraft(String id) {
         KitMeta meta = meta(id);
@@ -146,21 +129,16 @@ public final class EssentialsKitService {
         return true;
     }
 
-    public void deleteKit(String id) {
-        essentials.getKits().removeKit(id);
-        metadata.delete(id);
-    }
+    public void deleteKit(String id) { essentials.getKits().removeKit(id); metadata.delete(id); }
 
-    public void reloadAll() {
-        essentials.getKits().reloadConfig();
-        metadata.reload();
-    }
+    public void reloadAll() { essentials.getKits().reloadConfig(); metadata.reload(); }
 
     public ClaimResult claim(Player player, String id) {
         String matched = match(id);
         if (matched == null) return ClaimResult.NOT_FOUND;
         KitMeta meta = meta(matched);
         if (!meta.enabled() && !player.hasPermission("mirakits.admin")) return ClaimResult.DISABLED;
+        if (!windows.active(matched) && !player.hasPermission("mirakits.admin")) return ClaimResult.DISABLED;
 
         try {
             User user = essentials.getUser(player);
@@ -195,18 +173,12 @@ public final class EssentialsKitService {
             Kit kit = new Kit(id, essentials);
             for (String line : kit.getItems()) {
                 ParsedLine parsed = parseLine(line);
-                if (parsed.item() == null) {
-                    passthrough.add(line);
-                    continue;
-                }
+                if (parsed.item() == null) { passthrough.add(line); continue; }
                 int slot = parsed.slot();
                 if (slot < 0 || slot >= 45 || items.containsKey(slot)) slot = firstFree(items);
-                if (slot < 0 || slot >= 45) passthrough.add(line);
-                else items.put(slot, parsed.item());
+                if (slot < 0 || slot >= 45) passthrough.add(line); else items.put(slot, parsed.item());
             }
-        } catch (Exception ex) {
-            plugin.getLogger().log(Level.WARNING, "Could not read Essentials kit " + id, ex);
-        }
+        } catch (Exception ex) { plugin.getLogger().log(Level.WARNING, "Could not read Essentials kit " + id, ex); }
         return new ParsedKit(items, passthrough);
     }
 
@@ -221,12 +193,8 @@ public final class EssentialsKitService {
             catch (NumberFormatException ex) { return new ParsedLine(-1, null); }
             payload = payload.substring(space + 1).trim();
         }
-
         String currency = currencySymbol();
-        if (payload.startsWith("/") || payload.startsWith("$") || (!currency.isBlank() && payload.startsWith(currency))) {
-            return new ParsedLine(slot, null);
-        }
-
+        if (payload.startsWith("/") || payload.startsWith("$") || (!currency.isBlank() && payload.startsWith(currency))) return new ParsedLine(slot, null);
         try {
             SerializationProvider provider = essentials.provider(SerializationProvider.class);
             if (payload.startsWith("@")) {
@@ -234,7 +202,6 @@ public final class EssentialsKitService {
                 byte[] bytes = Base64.getMimeDecoder().decode(payload.substring(1));
                 return new ParsedLine(slot, provider.deserializeItem(bytes));
             }
-
             String[] parts = payload.split(" +");
             if (parts.length == 0) return new ParsedLine(slot, null);
             int amount = parts.length > 1 ? Integer.parseInt(parts[1]) : 1;
@@ -255,24 +222,24 @@ public final class EssentialsKitService {
         List<String> lines = new ArrayList<>();
         SerializationProvider provider = essentials.provider(SerializationProvider.class);
         boolean better = essentials.getSettings().isUseBetterKits() && provider != null;
-
         for (Map.Entry<Integer, ItemStack> entry : sorted) {
             ItemStack item = entry.getValue();
-            if (item == null || item.getType().isAir()) continue;
-            String payload = better
-                    ? "@" + Base64.getEncoder().encodeToString(provider.serializeItem(item))
-                    : essentials.getItemDb().serialize(item);
-            lines.add("slot:" + entry.getKey() + " " + payload);
+            try {
+                String itemLine;
+                if (better) itemLine = "@" + Base64.getMimeEncoder().encodeToString(provider.serializeItem(item));
+                else itemLine = essentials.getItemDb().serialize(item, true);
+                lines.add("slot:" + entry.getKey() + " " + itemLine);
+            } catch (Exception ex) { plugin.getLogger().log(Level.WARNING, "Could not serialize kit item in slot " + entry.getKey(), ex); }
         }
         lines.addAll(session.passthroughLines());
         return lines;
     }
 
-    private static int firstFree(Map<Integer, ItemStack> items) {
+    private int firstFree(Map<Integer, ItemStack> items) {
         for (int slot = 0; slot < 45; slot++) if (!items.containsKey(slot)) return slot;
         return -1;
     }
 
-    private record ParsedLine(int slot, ItemStack item) {}
-    private record ParsedKit(Map<Integer, ItemStack> items, List<String> passthrough) {}
+    private record ParsedKit(Map<Integer, ItemStack> items, List<String> passthrough) { }
+    private record ParsedLine(int slot, ItemStack item) { }
 }
