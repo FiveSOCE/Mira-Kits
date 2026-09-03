@@ -1,9 +1,9 @@
 name: MiraKits
-version: 0.1.5
+version: 0.1.6
 main: com.mira.kits.MiraKitsPlugin
 api-version: '1.21'
 authors: [FiveS]
-description: GUI-first EssentialsX kit management and claiming for the Mira plugin ecosystem.
+description: GUI-first EssentialsX kit management with event and temporary availability windows.
 depend: [MiraCore, Essentials]
 
 commands:
@@ -17,5 +17,5 @@ permissions:
     description: Allows use of the MiraKits player GUI.
     default: true
   mirakits.admin:
-    description: Allows access to the MiraKits admin GUI.
+    description: Allows access to the MiraKits admin GUI and bypass inactive event-kit windows.
     default: op
