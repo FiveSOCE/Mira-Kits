@@ -14,6 +14,7 @@ import com.mira.kits.prompt.ChatPromptService;
 import com.mira.kits.service.AdminSessionService;
 import com.mira.kits.service.EssentialsKitService;
 import com.mira.kits.service.KitMetadataStore;
+import com.mira.kits.service.KitWindowService;
 import net.ess3.api.IEssentials;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.Plugin;
@@ -23,6 +24,7 @@ public final class MiraKitsPlugin extends JavaPlugin {
     private MiraCore core;
     private IEssentials essentials;
     private KitMetadataStore metadata;
+    private KitWindowService windows;
     private EssentialsKitService kits;
     private AdminSessionService sessions;
     private KitGuiService gui;
@@ -40,7 +42,8 @@ public final class MiraKitsPlugin extends JavaPlugin {
         essentials = essentialsApi;
 
         metadata = new KitMetadataStore(this);
-        kits = new EssentialsKitService(this, essentials, metadata);
+        windows = new KitWindowService(this);
+        kits = new EssentialsKitService(this, essentials, metadata, windows);
         sessions = new AdminSessionService();
         gui = new KitGuiService(this, core, kits, sessions);
         ChatPromptService prompts = new ChatPromptService(this, core, kits, sessions, gui);
@@ -64,7 +67,7 @@ public final class MiraKitsPlugin extends JavaPlugin {
         command.setTabCompleter(executor);
 
         core.modules().setHealth(this, ModuleHealth.HEALTHY,
-                "EssentialsX kit GUI, economy, cooldown and admin editor ready");
+                "EssentialsX kits, event windows and temporary kit gating ready");
         getLogger().info("MiraKits v" + getPluginMeta().getVersion() + " enabled with " + kits.kitIds().size() + " Essentials kit(s).");
     }
 
@@ -76,15 +79,8 @@ public final class MiraKitsPlugin extends JavaPlugin {
         }
     }
 
-    public IEssentials essentials() {
-        return essentials;
-    }
-
-    public EssentialsKitService kits() {
-        return kits;
-    }
-
-    public KitGuiService gui() {
-        return gui;
-    }
+    public IEssentials essentials() { return essentials; }
+    public EssentialsKitService kits() { return kits; }
+    public KitGuiService gui() { return gui; }
+    public KitWindowService windows() { return windows; }
 }
