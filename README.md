@@ -4,13 +4,13 @@ MiraKits is the GUI-first kit interface and administration layer for the Mira Pa
 
 ## Download
 
-[**Download MiraKits v0.1.5**](https://github.com/FiveSOCE/Mira-Kits/releases/download/v0.1.5/MiraKits-0.1.5.jar)
+[**Download MiraKits v0.1.6**](https://github.com/FiveSOCE/Mira-Kits/releases/download/v0.1.6/MiraKits-0.1.6.jar)
 
 ## Requirements / Dependencies
 
 - Paper 1.21.11
 - Java 21
-- MiraCore 0.1.0 or newer
+- MiraCore 0.2.0 or newer
 - EssentialsX 2.22.0 or newer
 
 ## How MiraKits Works
@@ -19,7 +19,7 @@ EssentialsX `kits.yml` remains authoritative for kit existence, item contents an
 
 MiraKits routes normal Essentials `/kit` access through its own claim checks so players cannot bypass price, cooldown, disabled/event-window or permission rules through the standard command. Mira-specific fields such as price, visibility and enabled state are stored in `plugins/MiraKits/kit-meta.yml`.
 
-Administrators use `/mkits admin` to create and manage kits. Creating a kit or editing price/cooldown uses private chat input: the GUI closes, MiraKits waits for that player's next message, cancels the message so it is not broadcast, then reopens the editor after valid input. Invalid input keeps the prompt active and `cancel` aborts it. Admin tools include copying the administrator's inventory into a kit, safely editing contents, changing cooldown/price, visibility and enabled state, deleting kits and reloading Essentials/Mira metadata. Current source also supports temporary/event availability windows; `mirakits.admin` bypasses inactive event-kit windows.
+Administrators use `/mkits admin` to create and manage kits. Creating a kit or editing price/cooldown uses private chat input: the GUI closes, MiraKits waits for that player's next message, cancels the message so it is not broadcast, then reopens the editor after valid input. Invalid input keeps the prompt active and `cancel` aborts it. Admin tools include copying the administrator's inventory into a kit, safely editing contents, changing cooldown/price, visibility and enabled state, deleting kits and reloading Essentials/Mira metadata. v0.1.6 adds temporary/event availability windows directly to the kit claim pipeline. Each Essentials kit can optionally have an absolute ISO-8601 start/end window in MiraKits config; players cannot claim it outside that window, while `mirakits.admin` can bypass inactive windows for testing/administration. The release also fixes EssentialsX 2.22 item serialization when saving edited kit contents.
 
 MiraKits registers `MiraKitsApi` through MiraCore so MiraNPC and other modules can open the kit GUI without duplicating claim logic.
 
