@@ -219,12 +219,14 @@ public final class KitGuiService {
     }
 
     public void claimAndRespond(Player player, String id) {
+        boolean temporary = kits.temporaryKit(player, id);
         ClaimResult result = kits.claim(player, id);
         switch (result) {
             case SUCCESS -> {
                 KitMeta meta = kits.meta(id);
                 core.messages().send(player, "&aClaimed &f" + meta.displayName() + "&a.");
-                player.closeInventory();
+                if (temporary) openPlayerList(player);
+                else player.closeInventory();
             }
             case NOT_FOUND -> core.messages().send(player, "&cThat kit no longer exists in Essentials.");
             case DISABLED -> core.messages().send(player, "&cThat kit is currently disabled.");
@@ -261,6 +263,12 @@ public final class KitGuiService {
                 .append(Component.text(KitText.money(meta.price(), kits.currencySymbol()), NamedTextColor.WHITE)));
         lore.add(Component.text("Cooldown: ", NamedTextColor.GRAY)
                 .append(Component.text(cooldownLabel(kits.delaySeconds(id)), NamedTextColor.WHITE)));
+        lore.add(Component.text("Type: ", NamedTextColor.GRAY)
+                .append(Component.text(kits.windows().configuredTemporary(id)
+                        ? "Temporary (One-Time)" : "Normal", NamedTextColor.WHITE)));
+        lore.add(Component.text("Permission: ", NamedTextColor.GRAY)
+                .append(Component.text(kits.windows().configuredTemporary(id)
+                        ? kits.temporaryPermission(id) : kits.normalPermission(id), NamedTextColor.WHITE)));
         lore.add(Component.empty());
         lore.add(Component.text("Items shown above are exact copies", NamedTextColor.DARK_GRAY));
         lore.add(Component.text("of the configured Essentials kit items.", NamedTextColor.DARK_GRAY));
