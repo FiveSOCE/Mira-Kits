@@ -84,21 +84,32 @@ public final class EssentialsKitService {
         catch (Exception ex) { return 0L; }
     }
 
-    public boolean temporaryKit(String id) {
-        return windows.eventKit(id);
+    public String normalPermission(String id) {
+        return "Mirakits." + id;
     }
 
-    public String permissionNode(String id) {
-        return temporaryKit(id) ? "Mirakits.Temp." + id : "Mirakits." + id;
+    public String temporaryPermission(String id) {
+        return "Mirakits.Temp." + id;
+    }
+
+    public boolean temporaryKit(Player player, String id) {
+        if (windows.configuredTemporary(id)) return true;
+        return player != null && !player.hasPermission("mirakits.admin")
+                && player.hasPermission(temporaryPermission(id));
     }
 
     public boolean hasKitPermission(Player player, String id) {
         if (player.hasPermission("mirakits.admin")) return true;
-        return player.hasPermission(permissionNode(id));
+        if (temporaryKit(player, id)) return player.hasPermission(temporaryPermission(id));
+        return player.hasPermission(normalPermission(id));
+    }
+
+    public String permissionNode(Player player, String id) {
+        return temporaryKit(player, id) ? temporaryPermission(id) : normalPermission(id);
     }
 
     public boolean temporaryClaimed(Player player, String id) {
-        return temporaryKit(id) && temporaryClaims.claimed(player.getUniqueId(), id);
+        return temporaryKit(player, id) && temporaryClaims.claimed(player.getUniqueId(), id);
     }
 
     public boolean visibleTo(Player player, String id) {
@@ -176,7 +187,7 @@ public final class EssentialsKitService {
         try {
             User user = essentials.getUser(player);
             Kit kit = new Kit(matched, essentials);
-            if (!temporaryKit(matched)) {
+            if (!temporaryKit(player, matched)) {
                 long nextUse = kit.getNextUse(user);
                 if (nextUse != 0L) return ClaimResult.COOLDOWN;
             }
@@ -189,11 +200,11 @@ public final class EssentialsKitService {
             finally { internalClaims.remove(player.getUniqueId()); }
             if (!expanded) return ClaimResult.INVENTORY_FULL_OR_CANCELLED;
 
-            if (!temporaryKit(matched)) {
+            if (!temporaryKit(player, matched)) {
                 kit.setTime(user);
             }
             if (price.signum() > 0) user.takeMoney(price);
-            if (temporaryKit(matched) && !admin) {
+            if (temporaryKit(player, matched) && !admin) {
                 temporaryClaims.markClaimed(player.getUniqueId(), matched);
             }
             return ClaimResult.SUCCESS;
