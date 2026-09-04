@@ -79,7 +79,7 @@ public final class KitGuiService {
         List<String> visible = kits.kitIds().stream()
                 .filter(id -> {
                     KitMeta meta = kits.meta(id);
-                    return meta.visible() && meta.enabled() && kits.hasKitPermission(player, id);
+                    return meta.visible() && meta.enabled() && kits.visibleTo(player, id);
                 })
                 .toList();
 
@@ -120,7 +120,7 @@ public final class KitGuiService {
         String id = kits.match(input);
         if (id == null) return false;
         KitMeta meta = kits.meta(id);
-        if ((!meta.visible() || !meta.enabled() || !kits.hasKitPermission(player, id))
+        if ((!meta.visible() || !meta.enabled() || !kits.visibleTo(player, id))
                 && !player.hasPermission("mirakits.admin")) return false;
 
         Inventory inventory = Bukkit.createInventory(
@@ -229,6 +229,7 @@ public final class KitGuiService {
             case NOT_FOUND -> core.messages().send(player, "&cThat kit no longer exists in Essentials.");
             case DISABLED -> core.messages().send(player, "&cThat kit is currently disabled.");
             case NO_PERMISSION -> core.messages().send(player, "&cYou do not have permission to claim that kit.");
+            case ALREADY_CLAIMED -> core.messages().send(player, "&eThat temporary kit has already been claimed.");
             case COOLDOWN -> {
                 long next = kits.nextUse(player, id);
                 String wait = next < 0 ? "This one-time kit has already been claimed."
