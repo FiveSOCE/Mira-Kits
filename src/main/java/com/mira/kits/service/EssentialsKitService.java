@@ -33,13 +33,16 @@ public final class EssentialsKitService {
     private final IEssentials essentials;
     private final KitMetadataStore metadata;
     private final KitWindowService windows;
+    private final TemporaryKitClaimStore temporaryClaims;
     private final Set<UUID> internalClaims = ConcurrentHashMap.newKeySet();
 
-    public EssentialsKitService(MiraKitsPlugin plugin, IEssentials essentials, KitMetadataStore metadata, KitWindowService windows) {
+    public EssentialsKitService(MiraKitsPlugin plugin, IEssentials essentials, KitMetadataStore metadata,
+                                KitWindowService windows, TemporaryKitClaimStore temporaryClaims) {
         this.plugin = plugin;
         this.essentials = essentials;
         this.metadata = metadata;
         this.windows = windows;
+        this.temporaryClaims = temporaryClaims;
     }
 
     public IEssentials essentials() { return essentials; }
@@ -81,9 +84,28 @@ public final class EssentialsKitService {
         catch (Exception ex) { return 0L; }
     }
 
+    public boolean temporaryKit(String id) {
+        return windows.eventKit(id);
+    }
+
+    public String permissionNode(String id) {
+        return temporaryKit(id) ? "Mirakits.Temp." + id : "Mirakits." + id;
+    }
+
     public boolean hasKitPermission(Player player, String id) {
-        try { return essentials.getUser(player).isAuthorized("essentials.kits." + id.toLowerCase(Locale.ROOT)); }
-        catch (RuntimeException ex) { return false; }
+        if (player.hasPermission("mirakits.admin")) return true;
+        return player.hasPermission(permissionNode(id));
+    }
+
+    public boolean temporaryClaimed(Player player, String id) {
+        return temporaryKit(id) && temporaryClaims.claimed(player.getUniqueId(), id);
+    }
+
+    public boolean visibleTo(Player player, String id) {
+        if (player.hasPermission("mirakits.admin")) return true;
+        if (!hasKitPermission(player, id)) return false;
+        if (!windows.active(id)) return false;
+        return !temporaryClaimed(player, id);
     }
 
     public List<ItemStack> previewItems(String id) { return previewSlots(id).values().stream().map(ItemStack::clone).toList(); }
@@ -129,23 +151,35 @@ public final class EssentialsKitService {
         return true;
     }
 
-    public void deleteKit(String id) { essentials.getKits().removeKit(id); metadata.delete(id); }
+    public void deleteKit(String id) {
+        essentials.getKits().removeKit(id);
+        metadata.delete(id);
+        temporaryClaims.clearKit(id);
+    }
 
-    public void reloadAll() { essentials.getKits().reloadConfig(); metadata.reload(); }
+    public void reloadAll() {
+        essentials.getKits().reloadConfig();
+        metadata.reload();
+        temporaryClaims.reload();
+    }
 
     public ClaimResult claim(Player player, String id) {
         String matched = match(id);
         if (matched == null) return ClaimResult.NOT_FOUND;
         KitMeta meta = meta(matched);
-        if (!meta.enabled() && !player.hasPermission("mirakits.admin")) return ClaimResult.DISABLED;
-        if (!windows.active(matched) && !player.hasPermission("mirakits.admin")) return ClaimResult.DISABLED;
+        boolean admin = player.hasPermission("mirakits.admin");
+        if (!meta.enabled() && !admin) return ClaimResult.DISABLED;
+        if (!windows.active(matched) && !admin) return ClaimResult.DISABLED;
+        if (!hasKitPermission(player, matched) && !admin) return ClaimResult.NO_PERMISSION;
+        if (temporaryClaimed(player, matched) && !admin) return ClaimResult.ALREADY_CLAIMED;
 
         try {
             User user = essentials.getUser(player);
             Kit kit = new Kit(matched, essentials);
-            if (!user.isAuthorized("essentials.kits." + matched.toLowerCase(Locale.ROOT))) return ClaimResult.NO_PERMISSION;
-            long nextUse = kit.getNextUse(user);
-            if (nextUse != 0L) return ClaimResult.COOLDOWN;
+            if (!temporaryKit(matched)) {
+                long nextUse = kit.getNextUse(user);
+                if (nextUse != 0L) return ClaimResult.COOLDOWN;
+            }
             BigDecimal price = meta.price().max(BigDecimal.ZERO);
             if (price.signum() > 0 && !user.canAfford(price)) return ClaimResult.INSUFFICIENT_FUNDS;
 
@@ -155,8 +189,13 @@ public final class EssentialsKitService {
             finally { internalClaims.remove(player.getUniqueId()); }
             if (!expanded) return ClaimResult.INVENTORY_FULL_OR_CANCELLED;
 
-            kit.setTime(user);
+            if (!temporaryKit(matched)) {
+                kit.setTime(user);
+            }
             if (price.signum() > 0) user.takeMoney(price);
+            if (temporaryKit(matched) && !admin) {
+                temporaryClaims.markClaimed(player.getUniqueId(), matched);
+            }
             return ClaimResult.SUCCESS;
         } catch (Exception ex) {
             plugin.getLogger().log(Level.WARNING, "Could not claim Essentials kit " + matched + " for " + player.getName(), ex);
