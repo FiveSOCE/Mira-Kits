@@ -227,7 +227,7 @@ public final class EssentialsKitService {
             try {
                 String itemLine;
                 if (better) itemLine = "@" + Base64.getMimeEncoder().encodeToString(provider.serializeItem(item));
-                else itemLine = essentials.getItemDb().serialize(item, true);
+                else itemLine = essentials.getItemDb().serialize(item);
                 lines.add("slot:" + entry.getKey() + " " + itemLine);
             } catch (Exception ex) { plugin.getLogger().log(Level.WARNING, "Could not serialize kit item in slot " + entry.getKey(), ex); }
         }
