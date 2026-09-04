@@ -16,3 +16,10 @@ event-kits:
     enabled: false
     start: "2026-12-01T00:00:00Z"
     end: "2027-01-01T00:00:00Z"
+
+
+# Optional permanent classification for one-time temporary kits.
+# Event-window kits above are automatically treated as temporary.
+# You can also list normal Essentials kit IDs here to force them into
+# Mirakits.Temp.<KitName> one-time permission mode without an event window.
+temporary-kits: []
