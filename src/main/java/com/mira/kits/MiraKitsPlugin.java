@@ -15,6 +15,7 @@ import com.mira.kits.service.AdminSessionService;
 import com.mira.kits.service.EssentialsKitService;
 import com.mira.kits.service.KitMetadataStore;
 import com.mira.kits.service.KitWindowService;
+import com.mira.kits.service.TemporaryKitClaimStore;
 import net.ess3.api.IEssentials;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.Plugin;
@@ -25,6 +26,7 @@ public final class MiraKitsPlugin extends JavaPlugin {
     private IEssentials essentials;
     private KitMetadataStore metadata;
     private KitWindowService windows;
+    private TemporaryKitClaimStore temporaryClaims;
     private EssentialsKitService kits;
     private AdminSessionService sessions;
     private KitGuiService gui;
@@ -43,7 +45,8 @@ public final class MiraKitsPlugin extends JavaPlugin {
 
         metadata = new KitMetadataStore(this);
         windows = new KitWindowService(this);
-        kits = new EssentialsKitService(this, essentials, metadata, windows);
+        temporaryClaims = new TemporaryKitClaimStore(this);
+        kits = new EssentialsKitService(this, essentials, metadata, windows, temporaryClaims);
         sessions = new AdminSessionService();
         gui = new KitGuiService(this, core, kits, sessions);
         ChatPromptService prompts = new ChatPromptService(this, core, kits, sessions, gui);
