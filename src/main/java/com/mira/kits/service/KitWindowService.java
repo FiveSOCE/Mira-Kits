@@ -26,6 +26,14 @@ public final class KitWindowService {
         return plugin.getConfig().getBoolean(base(kitId) + ".enabled", false);
     }
 
+    public boolean configuredTemporary(String kitId) {
+        String normalized = kitId == null ? "" : kitId.toLowerCase(Locale.ROOT);
+        if (eventKit(kitId)) return true;
+        return plugin.getConfig().getStringList("temporary-kits").stream()
+                .map(value -> value.toLowerCase(Locale.ROOT))
+                .anyMatch(normalized::equals);
+    }
+
     public String status(String kitId) {
         if (!eventKit(kitId)) return "Permanent";
         String base = base(kitId);
