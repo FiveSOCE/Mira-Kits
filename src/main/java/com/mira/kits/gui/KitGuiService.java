@@ -221,28 +221,52 @@ public final class KitGuiService {
 
     public void claimAndRespond(Player player, String id) {
         boolean temporary = kits.temporaryKit(player, id);
+        boolean eventKit = kits.windows().eventKit(id);
         ClaimResult result = kits.claim(player, id);
         switch (result) {
             case SUCCESS -> {
                 KitMeta meta = kits.meta(id);
                 core.messages().send(player, "&aClaimed &f" + meta.displayName() + "&a.");
-                CosmeticsBridge.play(player, temporary ? "kit_temp_claim" : "kit_claim", player.getLocation());
+                String cosmeticEvent = eventKit ? "kit_event_claim" : (temporary ? "kit_temp_claim" : "kit_claim");
+                CosmeticsBridge.play(player, cosmeticEvent, player.getLocation());
                 if (temporary) openPlayerList(player);
                 else player.closeInventory();
             }
-            case NOT_FOUND -> core.messages().send(player, "&cThat kit no longer exists in Essentials.");
-            case DISABLED -> core.messages().send(player, "&cThat kit is currently disabled.");
-            case NO_PERMISSION -> core.messages().send(player, "&cYou do not have permission to claim that kit.");
-            case ALREADY_CLAIMED -> core.messages().send(player, "&eThat temporary kit has already been claimed.");
+            case NOT_FOUND -> {
+                CosmeticsBridge.play(player, "kit_error", player.getLocation());
+                core.messages().send(player, "&cThat kit no longer exists in Essentials.");
+            }
+            case DISABLED -> {
+                CosmeticsBridge.play(player, "kit_error", player.getLocation());
+                core.messages().send(player, "&cThat kit is currently disabled.");
+            }
+            case NO_PERMISSION -> {
+                CosmeticsBridge.play(player, "kit_error", player.getLocation());
+                core.messages().send(player, "&cYou do not have permission to claim that kit.");
+            }
+            case ALREADY_CLAIMED -> {
+                CosmeticsBridge.play(player, "kit_error", player.getLocation());
+                core.messages().send(player, "&eThat temporary kit has already been claimed.");
+            }
             case COOLDOWN -> {
+                CosmeticsBridge.play(player, "kit_error", player.getLocation());
                 long next = kits.nextUse(player, id);
                 String wait = next < 0 ? "This one-time kit has already been claimed."
                         : "That kit is ready in " + KitText.duration(next - System.currentTimeMillis()) + ".";
                 core.messages().send(player, "&e" + wait);
             }
-            case INSUFFICIENT_FUNDS -> core.messages().send(player, "&cYou cannot afford that kit.");
-            case INVENTORY_FULL_OR_CANCELLED -> core.messages().send(player, "&cThe kit could not be delivered. Check your inventory space.");
-            case ERROR -> core.messages().send(player, "&cMiraKits could not deliver that kit. Check the server console.");
+            case INSUFFICIENT_FUNDS -> {
+                CosmeticsBridge.play(player, "kit_error", player.getLocation());
+                core.messages().send(player, "&cYou cannot afford that kit.");
+            }
+            case INVENTORY_FULL_OR_CANCELLED -> {
+                CosmeticsBridge.play(player, "kit_error", player.getLocation());
+                core.messages().send(player, "&cThe kit could not be delivered. Check your inventory space.");
+            }
+            case ERROR -> {
+                CosmeticsBridge.play(player, "kit_error", player.getLocation());
+                core.messages().send(player, "&cMiraKits could not deliver that kit. Check the server console.");
+            }
         }
     }
 
