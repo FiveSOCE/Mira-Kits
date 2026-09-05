@@ -1,5 +1,5 @@
 name: MiraKits
-version: 0.1.8
+version: 0.1.9
 main: com.mira.kits.MiraKitsPlugin
 api-version: '1.21'
 authors: [FiveS]
