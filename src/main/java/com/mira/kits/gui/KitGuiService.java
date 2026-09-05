@@ -8,6 +8,7 @@ import com.mira.kits.model.KitMeta;
 import com.mira.kits.service.AdminSessionService;
 import com.mira.kits.service.EssentialsKitService;
 import com.mira.kits.util.KitText;
+import com.mira.kits.util.CosmeticsBridge;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -225,6 +226,7 @@ public final class KitGuiService {
             case SUCCESS -> {
                 KitMeta meta = kits.meta(id);
                 core.messages().send(player, "&aClaimed &f" + meta.displayName() + "&a.");
+                CosmeticsBridge.play(player, temporary ? "kit_temp_claim" : "kit_claim", player.getLocation());
                 if (temporary) openPlayerList(player);
                 else player.closeInventory();
             }
