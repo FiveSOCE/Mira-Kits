@@ -35,19 +35,19 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: MiraKits-0.1.8
-          path: build/libs/MiraKits-0.1.8.jar
+          name: MiraKits-0.1.9
+          path: build/libs/MiraKits-0.1.9.jar
           if-no-files-found: error
 
-      - name: Publish v0.1.8 release if missing
+      - name: Publish v0.1.9 release if missing
         if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if ! gh release view v0.1.8 >/dev/null 2>&1; then
-            gh release create v0.1.8 \
-              build/libs/MiraKits-0.1.8.jar \
+          if ! gh release view v0.1.9 >/dev/null 2>&1; then
+            gh release create v0.1.9 \
+              build/libs/MiraKits-0.1.9.jar \
               --target "${{ github.sha }}" \
-              --title "MiraKits v0.1.8" \
-              --notes "Adds MiraCosmetics visuals for successful normal and one-time temporary kit claims while preserving MiraKits permission and claim authority."
+              --title "MiraKits v0.1.9" \
+              --notes "Completes MiraKits audio cosmetics with distinct normal, temporary and event-kit claim sounds plus the configured failure/unavailable sound for rejected claims."
           fi
