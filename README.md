@@ -4,7 +4,9 @@ MiraKits is the GUI-first kit interface and administration layer for the Mira Pa
 
 ## Download
 
-[**Download MiraKits v0.1.8**](https://github.com/FiveSOCE/Mira-Kits/releases/download/v0.1.8/MiraKits-0.1.8.jar)
+[**Download MiraKits v0.1.9**](https://github.com/FiveSOCE/Mira-Kits/releases/download/v0.1.9/MiraKits-0.1.9.jar)
+
+[View All Releases](https://github.com/FiveSOCE/Mira-Kits/releases)
 
 ## Requirements / Dependencies
 
@@ -139,3 +141,7 @@ MiraKits supplies:
 ## MiraCosmetics Integration (0.1.8)
 
 Adds MiraCosmetics visuals for successful normal and one-time temporary kit claims while preserving MiraKits permission and claim authority.
+
+## MiraCosmetics Audio Integration (0.1.9)
+
+Normal, temporary and configured event kits now emit distinct MiraCosmetics claim audio. Rejected claims use the configured `kit_error` sound. MiraCosmetics remains optional and the player's `/cosmetics` Audio toggle is respected.
