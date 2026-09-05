@@ -35,19 +35,19 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: MiraKits-0.1.7
-          path: build/libs/MiraKits-0.1.7.jar
+          name: MiraKits-0.1.8
+          path: build/libs/MiraKits-0.1.8.jar
           if-no-files-found: error
 
-      - name: Publish v0.1.7 release if missing
+      - name: Publish v0.1.8 release if missing
         if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if ! gh release view v0.1.7 >/dev/null 2>&1; then
-            gh release create v0.1.7 \
-              build/libs/MiraKits-0.1.7.jar \
+          if ! gh release view v0.1.8 >/dev/null 2>&1; then
+            gh release create v0.1.8 \
+              build/libs/MiraKits-0.1.8.jar \
               --target "${{ github.sha }}" \
-              --title "MiraKits v0.1.7" \
-              --notes "Makes Mirakits.<KitName> authoritative for normal kit visibility/claims, adds Mirakits.Temp.<KitName> one-time temporary kits with restart-safe claim persistence, removes the duplicate Essentials kit permission requirement and immediately hides consumed temp kits from the GUI."
+              --title "MiraKits v0.1.8" \
+              --notes "Adds MiraCosmetics visuals for successful normal and one-time temporary kit claims while preserving MiraKits permission and claim authority."
           fi
