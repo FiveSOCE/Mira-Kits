@@ -4,7 +4,7 @@ MiraKits is the GUI-first kit interface and administration layer for the Mira Pa
 
 ## Download
 
-[**Download MiraKits v0.1.7**](https://github.com/FiveSOCE/Mira-Kits/releases/download/v0.1.7/MiraKits-0.1.7.jar)
+[**Download MiraKits v0.1.8**](https://github.com/FiveSOCE/Mira-Kits/releases/download/v0.1.8/MiraKits-0.1.8.jar)
 
 ## Requirements / Dependencies
 
@@ -15,11 +15,11 @@ MiraKits is the GUI-first kit interface and administration layer for the Mira Pa
 
 ## How MiraKits Works
 
-EssentialsX `kits.yml` remains authoritative for kit existence, item contents and cooldowns. MiraKits v0.1.7 is now authoritative for player kit permissions: players do not need `essentials.kits.<name>` when claiming through MiraKits. MiraKits reads those kit definitions and presents them through a dynamic GUI. Only enabled, visible kits the player is actually allowed to claim are shown. Left-clicking a kit claims it immediately; right-clicking opens a read-only inspector showing the exact parsed Essentials ItemStacks and preserved non-item kit actions.
+EssentialsX `kits.yml` remains authoritative for kit existence, item contents and cooldowns. MiraKits v0.1.8 is now authoritative for player kit permissions: players do not need `essentials.kits.<name>` when claiming through MiraKits. MiraKits reads those kit definitions and presents them through a dynamic GUI. Only enabled, visible kits the player is actually allowed to claim are shown. Left-clicking a kit claims it immediately; right-clicking opens a read-only inspector showing the exact parsed Essentials ItemStacks and preserved non-item kit actions.
 
 MiraKits routes normal Essentials `/kit` access through its own claim checks so players cannot bypass price, cooldown, disabled/event-window or permission rules through the standard command. Mira-specific fields such as price, visibility and enabled state are stored in `plugins/MiraKits/kit-meta.yml`.
 
-Administrators use `/mkits admin` to create and manage kits. Creating a kit or editing price/cooldown uses private chat input: the GUI closes, MiraKits waits for that player's next message, cancels the message so it is not broadcast, then reopens the editor after valid input. Invalid input keeps the prompt active and `cancel` aborts it. Admin tools include copying the administrator's inventory into a kit, safely editing contents, changing cooldown/price, visibility and enabled state, deleting kits and reloading Essentials/Mira metadata. v0.1.7 adds temporary/event availability windows directly to the kit claim pipeline. Each Essentials kit can optionally have an absolute ISO-8601 start/end window in MiraKits config; players cannot claim it outside that window, while `mirakits.admin` can bypass inactive windows for testing/administration. The release also fixes EssentialsX 2.22 item serialization when saving edited kit contents.
+Administrators use `/mkits admin` to create and manage kits. Creating a kit or editing price/cooldown uses private chat input: the GUI closes, MiraKits waits for that player's next message, cancels the message so it is not broadcast, then reopens the editor after valid input. Invalid input keeps the prompt active and `cancel` aborts it. Admin tools include copying the administrator's inventory into a kit, safely editing contents, changing cooldown/price, visibility and enabled state, deleting kits and reloading Essentials/Mira metadata. v0.1.8 adds temporary/event availability windows directly to the kit claim pipeline. Each Essentials kit can optionally have an absolute ISO-8601 start/end window in MiraKits config; players cannot claim it outside that window, while `mirakits.admin` can bypass inactive windows for testing/administration. The release also fixes EssentialsX 2.22 item serialization when saving edited kit contents.
 
 MiraKits registers `MiraKitsApi` through MiraCore so MiraNPC and other modules can open the kit GUI without duplicating claim logic.
 
@@ -134,3 +134,8 @@ MiraKits supplies:
 - temporary one-time ownership
 - event windows
 - GUI claiming
+
+
+## MiraCosmetics Integration (0.1.8)
+
+Adds MiraCosmetics visuals for successful normal and one-time temporary kit claims while preserving MiraKits permission and claim authority.
