@@ -1,12 +1,14 @@
 # MiraKits
 
-MiraKits is the GUI-first kit interface and administration layer for the Mira Paper server suite. EssentialsX remains the source of truth for kit contents and cooldowns while MiraKits adds player-friendly browsing, safe claiming, prices, visibility/enabled metadata and in-game administration.
-
 ## Download
 
-[**Download MiraKits v0.1.9**](https://github.com/FiveSOCE/Mira-Kits/releases/download/v0.1.10/MiraKits-0.1.10.jar)
+**Latest compatibility release: v0.1.10**
 
-[View All Releases](https://github.com/FiveSOCE/Mira-Kits/releases)
+[**Download MiraKits-0.1.10.jar**](https://github.com/FiveSOCE/Mira-Kits/releases/download/v0.1.10/MiraKits-0.1.10.jar)
+
+[View all releases](https://github.com/FiveSOCE/Mira-Kits/releases)
+
+MiraKits is the GUI-first kit interface and administration layer for the Mira Paper server suite. EssentialsX remains the source of truth for kit contents and cooldowns while MiraKits adds player-friendly browsing, safe claiming, prices, visibility/enabled metadata and in-game administration.
 
 ## Requirements / Dependencies
 
