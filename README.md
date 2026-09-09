@@ -4,7 +4,7 @@ MiraKits is the GUI-first kit interface and administration layer for the Mira Pa
 
 ## Download
 
-[**Download MiraKits v0.1.9**](https://github.com/FiveSOCE/Mira-Kits/releases/download/v0.1.9/MiraKits-0.1.9.jar)
+[**Download MiraKits v0.1.9**](https://github.com/FiveSOCE/Mira-Kits/releases/download/v0.1.10/MiraKits-0.1.10.jar)
 
 [View All Releases](https://github.com/FiveSOCE/Mira-Kits/releases)
 
