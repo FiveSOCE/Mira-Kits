@@ -214,6 +214,31 @@ public final class EssentialsKitService {
         }
     }
 
+    /**
+     * Voucher/admin delivery path. A voucher already represents payment and permission,
+     * so this deliberately bypasses the normal kit price, cooldown, availability window
+     * and permission checks and expands the Essentials kit directly into the player's inventory.
+     */
+    public boolean grantVoucher(Player player, String id) {
+        if (player == null) return false;
+        String matched = match(id);
+        if (matched == null) return false;
+        try {
+            User user = essentials.getUser(player);
+            Kit kit = new Kit(matched, essentials);
+            internalClaims.add(player.getUniqueId());
+            try {
+                return kit.expandItems(user);
+            } finally {
+                internalClaims.remove(player.getUniqueId());
+            }
+        } catch (Exception ex) {
+            plugin.getLogger().log(Level.WARNING,
+                    "Could not instantly grant voucher kit " + matched + " to " + player.getName(), ex);
+            return false;
+        }
+    }
+
     public boolean isInternalClaim(UUID playerId) { return internalClaims.contains(playerId); }
 
     private ParsedKit parseKit(String id) {
