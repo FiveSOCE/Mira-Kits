@@ -1,16 +1,16 @@
 name: MiraKits
-version: 0.1.11
+version: 0.1.12
 main: com.mira.kits.MiraKitsPlugin
 api-version: '1.21'
 authors: [FiveS]
-description: GUI-first EssentialsX kit management with MiraKits permission authority and one-time temporary kits.
+description: GUI-first EssentialsX kit management with MiraKits permission authority, one-time temporary kits and direct console grants.
 depend: [MiraCore, Essentials]
 softdepend: [MiraCosmetics]
 
 commands:
   mirakits:
-    description: Opens the MiraKits GUI.
-    usage: /mirakits [admin]
+    description: Opens MiraKits or directly grants a kit.
+    usage: /mirakits [admin|grant <player> <kit>]
     aliases: [mkits]
 
 permissions:
@@ -18,5 +18,5 @@ permissions:
     description: Allows use of the MiraKits player GUI.
     default: true
   mirakits.admin:
-    description: Allows access to the MiraKits admin GUI and bypass inactive event-kit windows.
+    description: Allows MiraKits administration and direct bypass kit grants.
     default: op
