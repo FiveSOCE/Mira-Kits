@@ -9,6 +9,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.server.ServerCommandEvent;
 
 import java.util.Locale;
 
@@ -30,10 +31,7 @@ public final class KitCommandBridgeListener implements Listener {
         if (raw.isEmpty()) return;
         String[] parts = raw.split("\\s+");
         String label = parts[0].toLowerCase(Locale.ROOT);
-        if (!label.equals("kit") && !label.equals("kits")
-                && !label.equals("essentials:kit") && !label.equals("essentials:kits")) {
-            return;
-        }
+        if (!isKitLabel(label)) return;
 
         event.setCancelled(true);
         Player player = event.getPlayer();
@@ -49,5 +47,36 @@ public final class KitCommandBridgeListener implements Listener {
                 gui.openPlayerList(player);
             }
         });
+    }
+
+    /**
+     * Compatibility bridge for console callers such as MiraItems vouchers. Essentials' normal
+     * /kit flow fires KitClaimEvent, which MiraKits intentionally blocks for GUI-only player
+     * claims. Console kit delivery is administrative, so route it through the internal bypass
+     * path instead.
+     */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onConsoleKit(ServerCommandEvent event) {
+        String raw = event.getCommand() == null ? "" : event.getCommand().trim();
+        if (raw.isEmpty()) return;
+        String[] parts = raw.split("\\s+");
+        if (parts.length != 3 || !isKitLabel(parts[0].toLowerCase(Locale.ROOT))) return;
+
+        Player target = Bukkit.getPlayerExact(parts[2]);
+        String matched = plugin.kits().match(parts[1]);
+        if (target == null || matched == null) return;
+
+        event.setCancelled(true);
+        if (plugin.kits().grantVoucher(target, matched)) {
+            core.messages().send(event.getSender(), "&aGranted kit &f" + matched + " &ato &f" + target.getName() + "&a instantly.");
+            core.messages().send(target, "&aYou received kit &f" + matched + "&a.");
+        } else {
+            core.messages().send(event.getSender(), "&cCould not grant kit &f" + matched + "&c to &f" + target.getName() + "&c.");
+        }
+    }
+
+    private boolean isKitLabel(String label) {
+        return label.equals("kit") || label.equals("kits")
+                || label.equals("essentials:kit") || label.equals("essentials:kits");
     }
 }
