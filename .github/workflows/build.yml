@@ -53,16 +53,16 @@ jobs:
         run: gradle clean test build -PpaperApiVersion=1.21.11-R0.1-SNAPSHOT -PcompileJavaVersion=21 -PbytecodeJavaVersion=21 --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: MiraKits-0.1.10
-          path: build/libs/MiraKits-0.1.10.jar
+          name: MiraKits-0.1.11
+          path: build/libs/MiraKits-0.1.11.jar
           if-no-files-found: error
       - name: Publish release
         if: success() && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view v0.1.10 >/dev/null 2>&1; then
-            gh release upload v0.1.10 build/libs/MiraKits-0.1.10.jar --clobber
+          if gh release view v0.1.11 >/dev/null 2>&1; then
+            gh release upload v0.1.11 build/libs/MiraKits-0.1.11.jar --clobber
           else
-            gh release create v0.1.10 build/libs/MiraKits-0.1.10.jar --target "${{ github.sha }}" --title "MiraKits v0.1.10" --notes "Compatibility release: one MiraKits JAR targeting the shared Paper API surface from Minecraft 1.21.11 through 26.2. CI verifies both endpoints; production bytecode remains Java 21 compatible."
+            gh release create v0.1.11 build/libs/MiraKits-0.1.11.jar --target "${{ github.sha }}" --title "MiraKits v0.1.11" --notes "Adds direct instant voucher/admin kit delivery into the target player's inventory while preserving normal player claim cooldown, price, window and permission rules. Compatible with Paper/Minecraft 1.21.11 through 26.2."
           fi
