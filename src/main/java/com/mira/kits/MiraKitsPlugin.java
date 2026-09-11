@@ -60,7 +60,7 @@ public final class MiraKitsPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new KitCommandBridgeListener(this, core, gui), this);
         getServer().getPluginManager().registerEvents(new KitClaimGuardListener(this, core, kits), this);
 
-        MiraKitsCommand executor = new MiraKitsCommand(core, gui);
+        MiraKitsCommand executor = new MiraKitsCommand(core, gui, kits);
         PluginCommand command = getCommand("mirakits");
         if (command == null) {
             core.modules().setHealth(this, ModuleHealth.UNHEALTHY, "mirakits command missing from plugin.yml");
@@ -70,7 +70,7 @@ public final class MiraKitsPlugin extends JavaPlugin {
         command.setTabCompleter(executor);
 
         core.modules().setHealth(this, ModuleHealth.HEALTHY,
-                "EssentialsX kits, event windows and temporary kit gating ready");
+                "EssentialsX kits, event windows, temporary kit gating and direct console grants ready");
         getLogger().info("MiraKits v" + getPluginMeta().getVersion() + " enabled with " + kits.kitIds().size() + " Essentials kit(s).");
     }
 
