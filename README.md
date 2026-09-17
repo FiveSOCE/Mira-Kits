@@ -1,149 +1,144 @@
 # MiraKits
 
-## Download
+GUI-first kit interface and administration layer for the Mira Paper server suite.
 
-**Latest compatibility release: v0.1.10**
+EssentialsX remains authoritative for kit contents and cooldown storage while MiraKits owns player-facing browsing, prices, visibility, permission gating, temporary one-time kits, event windows and safe administration.
 
-[**Download MiraKits-0.1.10.jar**](https://github.com/FiveSOCE/Mira-Kits/releases/download/v0.1.10/MiraKits-0.1.10.jar)
+## Current Release
 
-[View all releases](https://github.com/FiveSOCE/Mira-Kits/releases)
+**v0.1.12** — compatible with Paper/Minecraft **1.21.11 through 26.2** using Java 21 bytecode.
 
-MiraKits is the GUI-first kit interface and administration layer for the Mira Paper server suite. EssentialsX remains the source of truth for kit contents and cooldowns while MiraKits adds player-friendly browsing, safe claiming, prices, visibility/enabled metadata and in-game administration.
+[View releases](https://github.com/FiveSOCE/Mira-Kits/releases)
 
-## Requirements / Dependencies
+## Requirements
 
-- Paper 1.21.11
+- Paper 1.21.11 through 26.2
 - Java 21
-- MiraCore 0.2.0 or newer
-- EssentialsX 2.22.0 or newer
+- MiraCore
+- EssentialsX 2.22.0+
+- MiraCosmetics optional
 
 ## How MiraKits Works
 
-EssentialsX `kits.yml` remains authoritative for kit existence, item contents and cooldowns. MiraKits v0.1.8 is now authoritative for player kit permissions: players do not need `essentials.kits.<name>` when claiming through MiraKits. MiraKits reads those kit definitions and presents them through a dynamic GUI. Only enabled, visible kits the player is actually allowed to claim are shown. Left-clicking a kit claims it immediately; right-clicking opens a read-only inspector showing the exact parsed Essentials ItemStacks and preserved non-item kit actions.
+EssentialsX `kits.yml` remains the source of truth for:
 
-MiraKits routes normal Essentials `/kit` access through its own claim checks so players cannot bypass price, cooldown, disabled/event-window or permission rules through the standard command. Mira-specific fields such as price, visibility and enabled state are stored in `plugins/MiraKits/kit-meta.yml`.
+- kit existence
+- item/action contents
+- normal kit cooldowns
 
-Administrators use `/mkits admin` to create and manage kits. Creating a kit or editing price/cooldown uses private chat input: the GUI closes, MiraKits waits for that player's next message, cancels the message so it is not broadcast, then reopens the editor after valid input. Invalid input keeps the prompt active and `cancel` aborts it. Admin tools include copying the administrator's inventory into a kit, safely editing contents, changing cooldown/price, visibility and enabled state, deleting kits and reloading Essentials/Mira metadata. v0.1.8 adds temporary/event availability windows directly to the kit claim pipeline. Each Essentials kit can optionally have an absolute ISO-8601 start/end window in MiraKits config; players cannot claim it outside that window, while `mirakits.admin` can bypass inactive windows for testing/administration. The release also fixes EssentialsX 2.22 item serialization when saving edited kit contents.
+MiraKits adds its own metadata under `plugins/MiraKits/` for:
 
-MiraKits registers `MiraKitsApi` through MiraCore so MiraNPC and other modules can open the kit GUI without duplicating claim logic.
+- price
+- enabled/disabled state
+- visibility
+- Mira-specific permissions
+- temporary-kit ownership
+- event availability windows
 
-## Commands
+Players browse eligible kits through the GUI. Left-click claims a kit; right-click opens a read-only inspector showing the parsed contents and preserved non-item actions.
 
-| Command | Permission | What it does |
-| --- | --- | --- |
-| `/mirakits` | `mirakits.use` | Opens the normal player kit GUI. |
-| `/mkits` | `mirakits.use` | Alias for `/mirakits`. |
-| `/mirakits admin` | `mirakits.admin` | Opens the kit administration GUI. |
-| `/mkits admin` | `mirakits.admin` | Short alias for the admin GUI. |
-| `/kits` | `mirakits.use` | Routed player-facing kit command that opens/uses the MiraKits flow. |
-| `/kit` | `mirakits.use` | Routed player-facing Essentials kit access so MiraKits claim rules cannot be bypassed. |
+Normal `/kit` and `/kits` access is routed through MiraKits so price, cooldown, permission and event-window checks cannot be bypassed through the normal command path.
 
-Most kit creation/editing actions are GUI-driven rather than separate commands.
-
-## Permissions
-
-| Permission | Default | What it does |
-| --- | --- | --- |
-| `mirakits.use` | Everyone | Allows use of the player kit GUI and routed normal kit flow. |
-| `mirakits.admin` | OP | Allows the administration GUI, kit editing and bypass of inactive event-kit windows. |
-
-
-## Kit Permission Model
-
-MiraKits uses two permission namespaces.
+## Permission Model
 
 ### Normal kits
 
 A normal kit requires:
 
-`Mirakits.<KitName>`
-
-Example:
-
-Essentials kit ID:
-
-`Knight`
-
-Required permission:
-
-`Mirakits.Knight`
-
-Without that permission the kit is not shown in the player GUI and cannot be claimed through MiraKits.
-
-Normal kits continue to obey their configured Essentials cooldown and MiraKits price.
-
-### Temporary one-time kits
-
-A temporary kit requires:
-
-`Mirakits.Temp.<KitName>`
-
-Example:
-
-`Mirakits.Temp.Summer`
-
-Temporary kits are one-time per player.
-
-After a successful claim:
-
-- the claim is written to `plugins/MiraKits/temporary-claims.yml`
-- the kit immediately disappears from that player's GUI
-- another claim is denied
-- removing and re-granting the LuckPerms permission does not reset the claim
-- restarting the server does not reset the claim
-
-A kit is treated as temporary when:
-
-1. it is configured as an enabled `event-kits.<id>` entry, or
-2. its ID is listed in `temporary-kits`, or
-3. the player has the `Mirakits.Temp.<KitName>` permission instead of the normal permission.
-
-If a kit is explicitly configured as temporary, players must use the temporary permission namespace.
-
-## Examples
-
-Normal reusable/cooldown kit:
-
+```text
+Mirakits.<KitName>
 ```
-Kit: Knight
-LuckPerms:
+
+Example:
+
+```text
 Mirakits.Knight
 ```
 
-Temporary one-time kit:
+MiraKits does not require the parallel `essentials.kits.<name>` node for GUI claims.
 
+### Temporary one-time kits
+
+Temporary kits use:
+
+```text
+Mirakits.Temp.<KitName>
 ```
-Kit: Summer
-LuckPerms:
-Mirakits.Temp.Summer
+
+After a successful temporary-kit claim:
+
+- the claim is persisted
+- the kit disappears from that player's GUI
+- re-granting the permission does not reset the claim
+- restarting the server does not reset the claim
+
+A kit can be treated as temporary through explicit configuration, event-kit configuration or the temporary permission namespace.
+
+## Event Windows
+
+Kits can optionally have absolute start/end availability windows. Players cannot claim outside the configured window, while administrators can bypass inactive windows for testing and management.
+
+## Admin GUI
+
+`/mirakits admin` provides GUI-first administration for:
+
+- creating kits
+- copying the administrator inventory into a kit
+- editing contents safely
+- setting price
+- setting cooldown
+- toggling visibility
+- toggling enabled state
+- temporary/event configuration
+- deleting kits
+- reloading Essentials/Mira metadata
+
+Price/cooldown editing uses private chat input. The editor closes, captures the administrator's next message without broadcasting it, validates the input and returns to the GUI.
+
+## Direct Grant Path — v0.1.12
+
+MiraKits exposes a console-safe grant command:
+
+```text
+/mirakits grant <player> <kit>
 ```
 
-After Summer is claimed once, it is permanently consumed for that player unless its claim record is administratively removed from the MiraKits data file.
+This is intended for trusted automation and integrations such as vouchers/store delivery. It delivers the Essentials kit directly and deliberately bypasses normal player-facing price, cooldown, permission and event-window checks.
 
-## Permission Authority
+MiraItems uses this direct path for modern kit-voucher redemption so contents appear immediately in the player's inventory.
 
-MiraKits no longer requires the parallel Essentials node `essentials.kits.<name>` for GUI claims.
+## Commands
 
-EssentialsX still supplies:
+| Command | Permission | Purpose |
+| --- | --- | --- |
+| `/mirakits` | `mirakits.use` | Opens the player kit GUI. |
+| `/mkits` | `mirakits.use` | Alias for `/mirakits`. |
+| `/mirakits admin` | `mirakits.admin` | Opens the administration GUI. |
+| `/mirakits grant <player> <kit>` | trusted/admin path | Direct console-safe kit delivery. |
+| `/kit` | `mirakits.use` | Routed player-facing kit flow. |
+| `/kits` | `mirakits.use` | Routed player-facing kit flow. |
 
-- kit contents
-- item/action expansion
-- cooldown storage for normal kits
-- economy hooks used by existing kit pricing
+## Permissions
 
-MiraKits supplies:
+| Permission | Default | Purpose |
+| --- | --- | --- |
+| `mirakits.use` | Everyone | Allows normal player kit use. |
+| `mirakits.admin` | OP | Allows administration and inactive-window bypass. |
+| `Mirakits.<KitName>` | Configured | Allows a normal kit. |
+| `Mirakits.Temp.<KitName>` | Configured | Allows a configured one-time temporary kit. |
 
-- visibility
-- permission checks
-- temporary one-time ownership
-- event windows
-- GUI claiming
+## MiraCosmetics Integration
 
+When MiraCosmetics is installed, successful normal, temporary and event claims can trigger centralized Mira visual/audio presentation. Rejected claims can use the configured error audio, and each player's Visual/Audio toggles remain respected.
 
-## MiraCosmetics Integration (0.1.8)
+## API
 
-Adds MiraCosmetics visuals for successful normal and one-time temporary kit claims while preserving MiraKits permission and claim authority.
+`MiraKitsApi` is registered through MiraCore so MiraNPC, MiraItems and other Mira modules can open or deliver kits without reimplementing claim logic.
 
-## MiraCosmetics Audio Integration (0.1.9)
+## Building
 
-Normal, temporary and configured event kits now emit distinct MiraCosmetics claim audio. Rejected claims use the configured `kit_error` sound. MiraCosmetics remains optional and the player's `/cosmetics` Audio toggle is respected.
+```bash
+gradle clean build
+```
+
+The output JAR is created in `build/libs/`.
