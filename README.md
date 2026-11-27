@@ -4,19 +4,39 @@ GUI-first kit interface and administration layer for the Mira Paper server suite
 
 EssentialsX remains authoritative for kit contents and cooldown storage while MiraKits owns player-facing browsing, prices, visibility, permission gating, temporary one-time kits, event windows and safe administration.
 
-## Current Release
+## Version-specific JAR downloads
 
-**v0.1.12** — compatible with Paper/Minecraft **1.21.11 through 26.2** using Java 21 bytecode.
+| Paper version | Java | JAR name | Download |
+| --- | --- | --- | --- |
+| **1.18.2** | 17 | `MiraKits_1.18.2.jar` | [Legacy release](https://github.com/FiveSOCE/Mira-Kits/releases/tag/dev-1.18.2) |
+| **1.21.11–26.2** | Java 21 baseline, newer server may require Java 25 | `MiraKits_1.21.11-26.2.jar` | [Modern release](https://github.com/FiveSOCE/Mira-Kits/releases/tag/compat-modern-1.21.11-26.2) |
 
-[View releases](https://github.com/FiveSOCE/Mira-Kits/releases)
+The links become usable when the corresponding CI succeeds and publishes the named JAR. Full in-game validation and Paper 1.19–1.21.10 certification are still outstanding.
 
-## Requirements
+[Legacy source](https://github.com/FiveSOCE/Mira-Kits/tree/compat/1.18.2) · [Modern source](https://github.com/FiveSOCE/Mira-Kits) · [All releases](https://github.com/FiveSOCE/Mira-Kits/releases)
 
-- Paper 1.21.11 through 26.2
-- Java 21
-- MiraCore
-- EssentialsX 2.22.0+
-- MiraCosmetics optional
+## Requirements and integrations
+
+- **Required:** Matching Paper and Java runtime, matching **MiraCore**, and a compatible **EssentialsX** installation (hard dependency `Essentials`).
+- **Optional:** MiraCosmetics for configurable successful-claim and error effects.
+- **Kit storage:** EssentialsX manages the actual kits and cooldown definitions; MiraKits adds prices, GUI, restrictions, permissions, temporary kits, event windows and grant automation.
+- Back up `plugins/MiraKits/` and EssentialsX kit files before switching versions. Do not install both MiraKits builds.
+
+## Commands and permissions
+
+| Command | Permission | Purpose |
+| --- | --- | --- |
+| `/mirakits` or `/mkits` | `mirakits.use` | Player kit GUI |
+| `/mirakits admin` | `mirakits.admin` | Admin kit editor |
+| `/mirakits grant <player> <kit>` | `mirakits.admin` (admin/console) | Trusted direct grant |
+| `/kit`, `/kits` | `mirakits.use` plus kit node | Routed kit claim and browsing |
+
+| Permission | Default | Purpose |
+| --- | --- | --- |
+| `mirakits.use` | Everyone | Player claim interface |
+| `mirakits.admin` | OP | Configure kits and bypass event windows |
+| `Mirakits.<KitName>` | Configured | Access a normal kit |
+| `Mirakits.Temp.<KitName>` | Configured | One-time temporary kit permission |
 
 ## How MiraKits Works
 
