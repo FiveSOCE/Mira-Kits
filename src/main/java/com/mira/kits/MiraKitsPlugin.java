@@ -71,7 +71,7 @@ public final class MiraKitsPlugin extends JavaPlugin {
 
         core.modules().setHealth(this, ModuleHealth.HEALTHY,
                 "EssentialsX kits, event windows, temporary kit gating and direct console grants ready");
-        getLogger().info("MiraKits v" + getPluginMeta().getVersion() + " enabled with " + kits.kitIds().size() + " Essentials kit(s).");
+        getLogger().info("MiraKits v" + getDescription().getVersion() + " enabled with " + kits.kitIds().size() + " Essentials kit(s).");
     }
 
     @Override
