@@ -344,7 +344,7 @@ public final class KitGuiService {
         ItemStack glass = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
         ItemMeta meta = glass.getItemMeta();
         meta.displayName(Component.empty());
-        meta.setEnchantmentGlintOverride(true);
+        // Legacy Paper lacks glint override; visual placeholder remains.
         glass.setItemMeta(meta);
         return glass;
     }
