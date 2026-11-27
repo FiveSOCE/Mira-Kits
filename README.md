@@ -8,10 +8,10 @@ EssentialsX remains authoritative for kit contents and cooldown storage while Mi
 
 | Paper version | Java | JAR name | Download |
 | --- | --- | --- | --- |
-| **1.18.2** | 17 | `MiraKits_1.18.2.jar` | [Legacy release](https://github.com/FiveSOCE/Mira-Kits/releases/tag/dev-1.18.2) |
-| **1.21.11–26.2** | Java 21 baseline, newer server may require Java 25 | `MiraKits_1.21.11-26.2.jar` | [Modern release](https://github.com/FiveSOCE/Mira-Kits/releases/tag/compat-modern-1.21.11-26.2) |
+| **1.18.2** | 17 | `MiraKits_1.18.2.jar` | [Download legacy JAR](https://github.com/FiveSOCE/Mira-Kits/releases/download/dev-1.18.2/MiraKits_1.18.2.jar) |
+| **1.21.11–26.2** | Java 21 baseline, newer server may require Java 25 | `MiraKits_1.21.11-26.2.jar` | [Download modern JAR](https://github.com/FiveSOCE/Mira-Kits/releases/download/compat-modern-1.21.11-26.2/MiraKits_1.21.11-26.2.jar) |
 
-The links become usable when the corresponding CI succeeds and publishes the named JAR. Full in-game validation and Paper 1.19–1.21.10 certification are still outstanding.
+Both named GitHub release JARs have been verified after successful CI builds. Full in-game validation and Paper 1.19–1.21.10 certification are still outstanding.
 
 [Legacy source](https://github.com/FiveSOCE/Mira-Kits/tree/compat/1.18.2) · [Modern source](https://github.com/FiveSOCE/Mira-Kits) · [All releases](https://github.com/FiveSOCE/Mira-Kits/releases)
 
