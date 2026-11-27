@@ -276,7 +276,7 @@ public final class KitGuiService {
         ItemStack chest = new ItemStack(Material.ENDER_CHEST);
         ItemMeta meta = chest.getItemMeta();
         meta.displayName(Component.text(metaData.displayName(), NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false));
-        meta.setEnchantmentGlintOverride(false);
+        // Paper 1.18.2 does not expose the glint override item component.
         meta.lore(null);
         chest.setItemMeta(meta);
         return chest;
