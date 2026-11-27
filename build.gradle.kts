@@ -60,4 +60,4 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks.test { useJUnitPlatform() }
 
-tasks.jar { archiveFileName.set("MiraKits-${project.version}.jar") }
+tasks.jar { archiveFileName.set("MiraKits_1.21.11-26.2.jar") }
