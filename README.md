@@ -11,7 +11,9 @@ EssentialsX remains authoritative for kit contents and cooldown storage while Mi
 | **Paper 1.18.2** | 17 | `MiraKits_1.18.2.jar` | [Download 1.18.2 JAR](https://github.com/FiveSOCE/Mira-Kits/releases/download/dev-1.18.2/MiraKits_1.18.2.jar) |
 | **Paper 1.21.11–26.2** | Java 21 baseline; Paper 26.2 may require Java 25 | `MiraKits_1.21.11-26.2.jar` | [Download modern JAR](https://github.com/FiveSOCE/Mira-Kits/releases/download/compat-modern-1.21.11-26.2/MiraKits_1.21.11-26.2.jar) |
 
-Install only one versioned JAR. Release assets are published; complete in-game compatibility is not implied by compilation.
+**Build status:** Version-specific direct links are provided where published. A GitHub Actions or Releases link means the corresponding versioned JAR has not been verified. Compilation alone does not establish in-game compatibility; intermediate versions 1.19–1.21.10 remain unverified unless specifically documented.
+
+**Installation:** Back up plugin data, remove older JAR copies and install only the build matching your server. Never install both builds together.
 
 [Legacy source](https://github.com/FiveSOCE/Mira-Kits/tree/compat/1.18.2) · [Modern source](https://github.com/FiveSOCE/Mira-Kits) · [All releases](https://github.com/FiveSOCE/Mira-Kits/releases)
 
