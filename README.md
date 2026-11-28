@@ -4,14 +4,14 @@ GUI-first kit interface and administration layer for the Mira Paper server suite
 
 EssentialsX remains authoritative for kit contents and cooldown storage while MiraKits owns player-facing browsing, prices, visibility, permission gating, temporary one-time kits, event windows and safe administration.
 
-## Version-specific JAR downloads
+## Downloads and compatibility
 
-| Paper version | Java | JAR name | Download |
+| Server target | Java | Final JAR name | Download |
 | --- | --- | --- | --- |
-| **1.18.2** | 17 | `MiraKits_1.18.2.jar` | [Download legacy JAR](https://github.com/FiveSOCE/Mira-Kits/releases/download/dev-1.18.2/MiraKits_1.18.2.jar) |
-| **1.21.11–26.2** | Java 21 baseline, newer server may require Java 25 | `MiraKits_1.21.11-26.2.jar` | [Download modern JAR](https://github.com/FiveSOCE/Mira-Kits/releases/download/compat-modern-1.21.11-26.2/MiraKits_1.21.11-26.2.jar) |
+| **Paper 1.18.2** | 17 | `MiraKits_1.18.2.jar` | [Download 1.18.2 JAR](https://github.com/FiveSOCE/Mira-Kits/releases/download/dev-1.18.2/MiraKits_1.18.2.jar) |
+| **Paper 1.21.11–26.2** | Java 21 baseline; Paper 26.2 may require Java 25 | `MiraKits_1.21.11-26.2.jar` | [Download modern JAR](https://github.com/FiveSOCE/Mira-Kits/releases/download/compat-modern-1.21.11-26.2/MiraKits_1.21.11-26.2.jar) |
 
-Both named GitHub release JARs have been verified after successful CI builds. Full in-game validation and Paper 1.19–1.21.10 certification are still outstanding.
+Install only one versioned JAR. Release assets are published; complete in-game compatibility is not implied by compilation.
 
 [Legacy source](https://github.com/FiveSOCE/Mira-Kits/tree/compat/1.18.2) · [Modern source](https://github.com/FiveSOCE/Mira-Kits) · [All releases](https://github.com/FiveSOCE/Mira-Kits/releases)
 
@@ -155,10 +155,9 @@ When MiraCosmetics is installed, successful normal, temporary and event claims c
 
 `MiraKitsApi` is registered through MiraCore so MiraNPC, MiraItems and other Mira modules can open or deliver kits without reimplementing claim logic.
 
-## Building
 
-```bash
-gradle clean build
-```
+## Dependencies and installation
 
-The output JAR is created in `build/libs/`.
+- **Required:** MiraCore, Essentials; matching Paper version and Java runtime.
+- **Optional integrations:** MiraCosmetics.
+- Back up plugin data, remove old JARs, and restart after installing the appropriate release.
